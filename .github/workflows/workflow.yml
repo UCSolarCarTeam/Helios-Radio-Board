@@ -1,0 +1,16 @@
+name: Template workflow
+
+on:
+  # Comment this out if you only want Github Actions
+  # to run on pull requests.
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubtuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run template workflow
+        run: echo This is a template, please update this.
