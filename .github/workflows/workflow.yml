@@ -3,7 +3,7 @@ name: Template workflow
 on:
   # Comment this out if you only want Github Actions
   # to run on pull requests.
-  push:
+  # push:
   pull_request:
 
 jobs:
@@ -13,4 +13,4 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Run template workflow
-        run: echo This is a template, please update this.
+        run: make
