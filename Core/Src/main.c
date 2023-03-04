@@ -324,27 +324,82 @@ static void MX_GPIO_Init(void)
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
+
+    uint8_t status;
+    uint8_t irqstatus[3];
+
+    uint8_t nothing[] = {0x00};
+    HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_SLEEP, nothing, 1);
+
+    uint8_t data1[] = {0x01};
+    uint16_t size1 = 1;
+    HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_STANDBY, data1, size1);
+
+    HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATUS, &status, 1);
+
+    uint8_t data2[] = {0x00, 0x08};
+    uint16_t size2 = 2;
+    //HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_BUFFERBASEADDRESS, data2, size2);
+
+    uint8_t payload1[] = {0xA5};
+    uint16_t address1 = 0x00;
+    uint16_t size3 = 1;
+    //HAL_SUBGHZ_WriteRegisters(&hsubghz, address1, payload1, size3);
+
+    uint8_t data3[] = {0x00};
+    uint16_t size4 = 1;
+    //HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_PACKETTYPE, data3, size4);
+
+    uint8_t data4[] = {0x00, 0x08, 0x04, 0x08, 0x00, 0x00, 0x02, 0x00, 0x00};
+    uint16_t size5 = 9;
+    //HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_PACKETPARAMS, data4, size5);
+
+    uint8_t payload2[] = {0x11};
+    uint16_t address2 = 0x6C0;
+    uint16_t size6 = 1;
+    //HAL_SUBGHZ_WriteRegisters(&hsubghz, address2, payload2, size6);
+
+    uint8_t data5[] = {0x05, 0x74, 0x2D, 0xE0}; //91.5 MHz
+    uint16_t size7 = 4;
+    //HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_RFFREQUENCY, data5, size7);
+
+    uint8_t data6[] = {0x04, 0x07, 0x00, 0x01};
+    uint16_t size8 = 4;
+    //HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_PACONFIG, data6, size8);
+
+    uint8_t data7[] = {0x16, 0x07};
+    uint16_t size9 = 2;
+    HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_TXPARAMS, data7, size9);
+
+    uint8_t data8[] = {0x01, 0x90, 0x00, 0x00, 0x0B, 0x00, 0x00, 0xD2};
+    uint16_t size10 = 8;
+    //HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_MODULATIONPARAMS, data8, size10);
+
+    uint8_t data9[] = {0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00};
+    uint16_t size11 = 8;
+    //HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_CFG_DIOIRQ, data9, size11);
+
   /* Infinite loop */
   for(;;)
   {
+    uint8_t data10[] = {0x00, 0x00, 0x00};
+    uint16_t size12 = 3;
+    HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_TX, data10, size12);
+
+    HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATUS, &status, 1);
+    
+    osDelay(5);
+
+    while (((status & 0x70) >> 4) != 0x2)
+    {
+    	HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATUS, &status, 1);
+    }
+
+    uint8_t data11[] = {0xff, 0xff};
+    uint16_t size13 = 2;
+    //HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_CLR_IRQSTATUS, data11, size13);
+
     osDelay(100);
-
-    uint8_t data[] = {0x01};
-    uint16_t size = 1;
-    HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_STANDBY, data, size);
-
-    uint8_t data[] = {0x00, 0x08};
-    uint16_t size = 2;
-    HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_BUFFERBASEADDRESS, data, size);
-
-    uint8_t payload[] = {0xA5};
-    uint16_t address = 0x00;
-    uint16_t size = 1;
-    HAL_SUBGHZ_WriteRegisters(&hsubghz, address, payload, size);
-
-    uint8_t data[] = {0x00};
-    uint16_t size = 2;
-    HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_PACKETTYPE, data, size);
   }
   /* USER CODE END 5 */
 }
