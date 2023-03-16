@@ -41,6 +41,7 @@ Core/Src/app_freertos.c \
 Core/Src/stm32wlxx_it.c \
 Core/Src/stm32wlxx_hal_msp.c \
 Core/Src/stm32wlxx_hal_timebase_tim.c \
+Utilities/misc/stm32_mem.c \
 Drivers/STM32WLxx_HAL_Driver/Src/stm32wlxx_hal_rcc.c \
 Drivers/STM32WLxx_HAL_Driver/Src/stm32wlxx_hal_rcc_ex.c \
 Drivers/STM32WLxx_HAL_Driver/Src/stm32wlxx_hal_flash.c \
@@ -58,6 +59,10 @@ Drivers/STM32WLxx_HAL_Driver/Src/stm32wlxx_hal_tim.c \
 Drivers/STM32WLxx_HAL_Driver/Src/stm32wlxx_hal_tim_ex.c \
 Drivers/STM32WLxx_HAL_Driver/Src/stm32wlxx_hal_uart.c \
 Drivers/STM32WLxx_HAL_Driver/Src/stm32wlxx_hal_uart_ex.c \
+Drivers/BSP/STM32WLxx_Nucleo/stm32wlxx_nucleo_radio.c \
+Drivers/BSP/STM32WLxx_Nucleo/stm32wlxx_nucleo.c \
+Drivers/Radio/radio_board_if.c \
+Drivers/Radio/radio_driver.c \
 Core/Src/system_stm32wlxx.c \
 Middlewares/Third_Party/FreeRTOS/Source/croutine.c \
 Middlewares/Third_Party/FreeRTOS/Source/event_groups.c \
@@ -128,13 +133,17 @@ AS_INCLUDES =  \
 # C includes
 C_INCLUDES =  \
 -ICore/Inc \
+-IUtilities/conf \
+-IUtilities/misc \
 -IDrivers/STM32WLxx_HAL_Driver/Inc \
 -IDrivers/STM32WLxx_HAL_Driver/Inc/Legacy \
 -IMiddlewares/Third_Party/FreeRTOS/Source/include \
 -IMiddlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2 \
 -IMiddlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM3 \
 -IDrivers/CMSIS/Device/ST/STM32WLxx/Include \
--IDrivers/CMSIS/Include
+-IDrivers/CMSIS/Include \
+-IDrivers/BSP/STM32WLxx_Nucleo \
+-IDrivers/Radio
 
 
 # compile gcc flags
