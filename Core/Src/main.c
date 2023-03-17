@@ -58,6 +58,7 @@ const osThreadAttr_t defaultTask_attributes = {
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+void MX_SUBGHZ_Init(void);
 static void MX_USART2_UART_Init(void);
 void StartDefaultTask(void *argument);
 
@@ -165,15 +166,15 @@ void SystemClock_Config(void)
 
   /** Initializes the CPU, AHB and APB buses clocks
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
-  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.HSEState = RCC_HSE_BYPASS_PWR;
+  RCC_OscInitStruct.HSEDiv = RCC_HSE_DIV1;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
-  RCC_OscInitStruct.PLL.PLLM = RCC_PLLM_DIV2;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+  RCC_OscInitStruct.PLL.PLLM = RCC_PLLM_DIV3;
   RCC_OscInitStruct.PLL.PLLN = 18;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
-  RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV3;
+  RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV6;
   RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
@@ -191,7 +192,7 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
   RCC_ClkInitStruct.AHBCLK3Divider = RCC_SYSCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
   {
     Error_Handler();
   }
@@ -327,14 +328,25 @@ void StartDefaultTask(void *argument)
     uint8_t status;
     uint8_t irqstatus[3];
 
-    uint8_t nothing[] = {0x00};
-    HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_SLEEP, nothing, 1);
+    osDelay(1);
+
+    HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_ERROR, irqstatus, 3);
+
+    uint8_t payload0[] = {SMPS_CLK_DET_ENABLE};
+    uint16_t address0 = SUBGHZ_SMPSC0R;
+    uint16_t size0 = 1;
+    HAL_SUBGHZ_WriteRegisters(&hsubghz, address0, payload0, size0);
+
+    uint8_t regulator_mode[] = {0x01};
+    HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_REGULATORMODE, regulator_mode, 1);
 
     uint8_t data1[] = {0x01};
     uint16_t size1 = 1;
     HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_STANDBY, data1, size1);
 
     HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATUS, &status, 1);
+
+    HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_ERROR, irqstatus, 3);
 
     uint8_t data2[] = {0x00, 0x08};
     uint16_t size2 = 2;
