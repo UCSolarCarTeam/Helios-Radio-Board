@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
+#include "radio_drivers.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -36,9 +37,6 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-#define SMPS_CLK_DET_ENABLE ((uint8_t) (1<<6))
-#define SUBGHZ_SMPSC0R      0x0916
-
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -104,6 +102,7 @@ int main(void)
   MX_SUBGHZ_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
+  RadioInit();
 
   /* USER CODE END 2 */
 
@@ -298,17 +297,23 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : B1_Pin B2_Pin */
-  GPIO_InitStruct.Pin = B1_Pin|B2_Pin;
+  /*Configure GPIO pin : B1_Pin */
+  GPIO_InitStruct.Pin = B1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : B3_Pin */
   GPIO_InitStruct.Pin = B3_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(B3_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : B2_Pin */
+  GPIO_InitStruct.Pin = B2_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(B2_GPIO_Port, &GPIO_InitStruct);
 
 }
 
@@ -326,133 +331,12 @@ static void MX_GPIO_Init(void)
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
-
-    uint8_t status;
-    uint8_t read;
-    uint8_t irqstatus[3];
-
-    osDelay(1);
-
-    HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_ERROR, irqstatus, 3);
-
-    uint8_t payload0[] = {SMPS_CLK_DET_ENABLE};
-    uint16_t address0 = SUBGHZ_SMPSC0R;
-    uint16_t size0 = 1;
-    HAL_SUBGHZ_WriteRegisters(&hsubghz, address0, payload0, size0);
-
-    uint8_t regulator_mode[] = {0x01};
-    HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_REGULATORMODE, regulator_mode, 1);
-
-    HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATUS, &status, 1);
-    HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_ERROR, irqstatus, 3);
-
-    uint8_t data1[] = {0x01};
-    uint16_t size1 = 1;
-    HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_STANDBY, data1, size1);
-
-    HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATUS, &status, 1);
-    HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_ERROR, irqstatus, 3);
-
-    uint8_t data2[] = {0x00, 0x08};
-    uint16_t size2 = 2;
-    HAL_SUBGHZ_ReadRegisters(&hsubghz, 0x0802, &read, 1);
-    HAL_SUBGHZ_ReadRegisters(&hsubghz, 0x0803, &read, 1);
-    HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_BUFFERBASEADDRESS, data2, size2);
-    HAL_SUBGHZ_ReadRegisters(&hsubghz, 0x0802, &read, 1);
-    HAL_SUBGHZ_ReadRegisters(&hsubghz, 0x0803, &read, 1);
-
-    HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATUS, &status, 1);
-    HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_ERROR, irqstatus, 3);
-
-    uint8_t payload1[] = {0xA5};
-    uint16_t address1 = 0x00;
-    uint16_t size3 = 1;
-    HAL_SUBGHZ_WriteRegisters(&hsubghz, address1, payload1, size3);
-
-    HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATUS, &status, 1);
-    HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_ERROR, irqstatus, 3);
-
-    uint8_t data3[] = {0x00};
-    uint16_t size4 = 1;
-    HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_PACKETTYPE, data3, size4);
-
-    HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATUS, &status, 1);
-    HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_ERROR, irqstatus, 3);
-
-    uint8_t data4[] = {0x00, 0x08, 0x04, 0x08, 0x00, 0x00, 0x02, 0x00, 0x00};
-    uint16_t size5 = 9;
-    HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_PACKETPARAMS, data4, size5);
-
-    HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATUS, &status, 1);
-    HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_ERROR, irqstatus, 3);
-
-    uint8_t payload2[] = {0x11};
-    uint16_t address2 = 0x6C0;
-    uint16_t size6 = 1;
-    HAL_SUBGHZ_WriteRegisters(&hsubghz, address2, payload2, size6);
-
-    HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATUS, &status, 1);
-    HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_ERROR, irqstatus, 3);
-
-    //uint8_t data5[] = {0x05, 0x74, 0x2D, 0xE0}; //91.5 MHz
-    uint8_t data5[] = {0x36, 0x89, 0xCA, 0xC0}; //915 MHz
-    uint16_t size7 = 4;
-    HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_RFFREQUENCY, data5, size7);
-
-    HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATUS, &status, 1);
-    HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_ERROR, irqstatus, 3);
-
-    uint8_t data6[] = {0x04, 0x07, 0x00, 0x01};
-    uint16_t size8 = 4;
-    HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_PACONFIG, data6, size8);
-
-    HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATUS, &status, 1);
-    HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_ERROR, irqstatus, 3);
-
-    uint8_t data7[] = {0x16, 0x07};
-    uint16_t size9 = 2;
-    HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_TXPARAMS, data7, size9);
-
-    HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATUS, &status, 1);
-    HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_ERROR, irqstatus, 3);
-
-    uint8_t data8[] = {0x01, 0x90, 0x00, 0x00, 0x0B, 0x00, 0x00, 0xD2};
-    uint16_t size10 = 8;
-    HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_MODULATIONPARAMS, data8, size10);
-
-    HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATUS, &status, 1);
-    HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_ERROR, irqstatus, 3);
-
-    uint8_t data9[] = {0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00};
-    uint16_t size11 = 8;
-    HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_CFG_DIOIRQ, data9, size11);
-
-    HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATUS, &status, 1);
-    HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_ERROR, irqstatus, 3);
+  RadioSetupTX();
 
   /* Infinite loop */
   for(;;)
   {
-    uint8_t data10[] = {0x00, 0x00, 0x00};
-    uint16_t size12 = 3;
-    HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_TXCONTINUOUSWAVE, data10, size12);
-
-    HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATUS, &status, 1);
-    HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_ERROR, irqstatus, 3);
-    
-    osDelay(5);
-
-    while (((status & 0x70) >> 4) != 0x2)
-    {
-      HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATUS, &status, 1);
-      HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_ERROR, irqstatus, 3);
-    }
-
-    uint8_t data11[] = {0xff, 0xff};
-    uint16_t size13 = 2;
-    HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_CLR_IRQSTATUS, data11, size13);
-
-    osDelay(100);
+    RadioTransmit();
   }
   /* USER CODE END 5 */
 }
