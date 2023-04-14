@@ -103,7 +103,6 @@ int main(void)
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
   RadioInit();
-  HAL_GPIO_WritePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin, GPIO_PIN_SET);
 
   /* USER CODE END 2 */
 
@@ -332,12 +331,10 @@ static void MX_GPIO_Init(void)
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
-  RadioSetupRX();
-  uint8_t data = 5;
   /* Infinite loop */
   for(;;)
   {
-    RadioTransmit(&data, 1);
+    radioLoop();
   }
   /* USER CODE END 5 */
 }
