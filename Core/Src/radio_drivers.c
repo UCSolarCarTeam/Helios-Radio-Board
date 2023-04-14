@@ -11,6 +11,7 @@ void RadioInit()
 {
     uint8_t status;
     uint8_t irqstatus[3];
+    uint8_t read;
 
     osDelay(1);
 
@@ -33,34 +34,14 @@ void RadioInit()
 
     HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATUS, &status, 1);
     HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_ERROR, irqstatus, 3);
-}
 
-void RadioSetupTX()
-{
-    uint8_t status;
-    uint8_t read;
-    uint8_t irqstatus[3];
-
-    osDelay(1);
-
-    uint8_t data2[] = {0x00, 0x08};
+    uint8_t data2[] = {TXADDRESS, RXADDRESS};
     uint16_t size2 = 2;
     HAL_SUBGHZ_ReadRegisters(&hsubghz, 0x0802, &read, 1);
     HAL_SUBGHZ_ReadRegisters(&hsubghz, 0x0803, &read, 1);
     HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_BUFFERBASEADDRESS, data2, size2);
     HAL_SUBGHZ_ReadRegisters(&hsubghz, 0x0802, &read, 1);
     HAL_SUBGHZ_ReadRegisters(&hsubghz, 0x0803, &read, 1);
-
-    HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATUS, &status, 1);
-    HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_ERROR, irqstatus, 3);
-
-    uint8_t payload1[] = {0xA5};
-    uint16_t address1 = 0x00;
-    uint16_t size3 = 1;
-    HAL_SUBGHZ_WriteRegisters(&hsubghz, address1, payload1, size3);
-
-    HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATUS, &status, 1);
-    HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_ERROR, irqstatus, 3);
 
     uint8_t data3[] = {0x00};
     uint16_t size4 = 1;
@@ -81,13 +62,31 @@ void RadioSetupTX()
     uint16_t size6 = 1;
     HAL_SUBGHZ_WriteRegisters(&hsubghz, address2, payload2, size6);
 
-    HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATUS, &status, 1);
-    HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_ERROR, irqstatus, 3);
-
     //uint8_t data5[] = {0x05, 0x74, 0x2D, 0xE0}; //91.5 MHz
     uint8_t data5[] = {0x36, 0x89, 0xCA, 0xC0}; //915 MHz
     uint16_t size7 = 4;
     HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_RFFREQUENCY, data5, size7);
+
+    uint8_t data8[] = {0x01, 0x90, 0x00, 0x00, 0x0B, 0x00, 0x00, 0xD2};
+    uint16_t size10 = 8;
+    HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_MODULATIONPARAMS, data8, size10);
+}
+
+void RadioSetupTX()
+{
+    uint8_t status;
+    uint8_t read;
+    uint8_t irqstatus[3];
+
+    osDelay(1);
+
+    HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATUS, &status, 1);
+    HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_ERROR, irqstatus, 3);
+
+    uint8_t payload1[] = {0xA5};
+    uint16_t address1 = 0x00;
+    uint16_t size3 = 1;
+    HAL_SUBGHZ_WriteRegisters(&hsubghz, address1, payload1, size3);
 
     HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATUS, &status, 1);
     HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_ERROR, irqstatus, 3);
@@ -123,17 +122,22 @@ void RadioSetupTX()
 }
 
 void RadioSetupRX()
-{
-    
+{   
+    uint8_t data9[] = {0x00, 0x02, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00};
+    uint16_t size11 = 8;
+    HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_CFG_DIOIRQ, data9, size11);
 }
 
-void RadioTransmit()
+void RadioTransmit(uint8_t* data, uint8_t size)
 {
     uint8_t status;
     uint8_t irqstatus[3];
 
     uint8_t data1[] = {0x01};
     uint16_t size1 = 1;
+
+    //for(int i = 0; i < size; i++)
+    //{HAL_SUBGHZ_WriteRegisters(&hsubghz, TXADDRESS, data, size + i*8);}
 
     uint8_t data10[] = {0x00, 0x00, 0x00};
     uint16_t size12 = 3;
@@ -162,4 +166,27 @@ void RadioTransmit()
     HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_CLR_IRQSTATUS, data11, size13);
 
     osDelay(100);
+}
+
+void RadioReceive(uint8_t* data, uint8_t* size) 
+{
+  uint8_t irqStatus[3];
+  uint8_t bufferStatus[3];
+
+  uint8_t data10[] = {0xFF, 0xFF, 0xFF};
+  uint16_t size12 = 3;
+  HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_RX, data10, size12);
+
+  HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_ERROR, irqStatus, 3);
+
+  HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_RXBUFFERSTATUS, bufferStatus, 3);
+
+  HAL_SUBGHZ_ReadRegisters(&hsubghz, bufferStatus[3],data,  bufferStatus[2]);
+  HAL_SUBGHZ_ReadRegisters(&hsubghz, RXADDRESS, data, 1);
+
+
+
+  uint8_t data11[] = {0xff, 0xff};
+  uint16_t size13 = 2;
+  HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_CLR_IRQSTATUS, data11, size13);
 }

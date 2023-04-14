@@ -15,9 +15,13 @@
 #define SMPS_CLK_DET_ENABLE ((uint8_t) (1<<6))
 #define SUBGHZ_SMPSC0R      0x0916
 
+#define TXADDRESS 0x00
+#define RXADDRESS 0x08
+
 extern SUBGHZ_HandleTypeDef hsubghz;
 
 void RadioInit();
 void RadioSetupTX();
 void RadioSetupRX();
-void RadioTransmit();
+void RadioTransmit(uint8_t* data, uint8_t size);
+void RadioReceive(uint8_t* data, uint8_t* size);
