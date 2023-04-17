@@ -20,7 +20,7 @@
 #define TXADDRESS 0x00
 #define RXADDRESS 0x08
 
-#define TX 0
+#define TX 1
 #define RF_HP 1
 
 extern SUBGHZ_HandleTypeDef hsubghz;
