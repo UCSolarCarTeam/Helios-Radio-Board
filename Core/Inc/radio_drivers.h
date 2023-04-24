@@ -28,6 +28,6 @@ extern SUBGHZ_HandleTypeDef hsubghz;
 void RadioInit();
 void RadioSetupTX();
 void RadioSetupRX();
-void RadioTransmit(uint8_t* data, uint8_t size);
+int RadioTransmit(uint8_t* data, uint8_t size);
 void RadioReceive(uint8_t* data, uint8_t* size);
 void radioLoop();

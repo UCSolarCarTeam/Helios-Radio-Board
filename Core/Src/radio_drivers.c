@@ -98,11 +98,6 @@ void RadioSetupTX()
     HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATUS, &status, 1);
     HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_ERROR, irqstatus, 3);
 
-    uint8_t payload1[] = {0x5A, 0x11};
-    uint16_t address1 = 0x00;
-    uint16_t size3 = 2;
-    HAL_SUBGHZ_WriteRegisters(&hsubghz, address1, payload1, size3);
-
     HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATUS, &status, 1);
     HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_ERROR, irqstatus, 3);
 
@@ -156,13 +151,25 @@ void RadioSetupRX()
     HAL_GPIO_WritePin(FE_CTRL3_GPIO_Port, FE_CTRL3_Pin, GPIO_PIN_SET);
 }
 
-void RadioTransmit(uint8_t* data, uint8_t size)
+int RadioTransmit(uint8_t* data, uint8_t size)
 {
     uint8_t status;
     uint8_t irqstatus[3];
 
     uint8_t data1[] = {0x01};
     uint16_t size1 = 1;
+
+    if(size < RXADDRESS - TXADDRESS)  {
+      HAL_SUBGHZ_WriteBuffer(&hsubghz, TXADDRESS, data, size);
+      uint8_t data4[] = {0x00, 0x08, 0x04, 0x08, 0x00, 0x00, size, 0x00, 0x00};
+      uint16_t size5 = 9;
+      HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_PACKETPARAMS, data4, size5);
+      HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATUS, &status, 1);
+      HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_ERROR, irqstatus, 3);
+    }
+    else {
+      return 0;
+    }
 
     //for(int i = 0; i < size; i++)
     //{HAL_SUBGHZ_WriteRegisters(&hsubghz, TXADDRESS, data, size + i*8);}
@@ -198,8 +205,11 @@ void RadioTransmit(uint8_t* data, uint8_t size)
     HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_CLR_IRQSTATUS, data11, size13);
 
     osDelay(10);
+
+    return 1;
 }
 
+// ayo redbuffer is not the same as readregister?!?!?!?!?!?! shit I think i know what I did wrong
 void RadioReceive(uint8_t* data, uint8_t* size) 
 {
   uint8_t status;
@@ -218,9 +228,9 @@ void RadioReceive(uint8_t* data, uint8_t* size)
 
   HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_RXBUFFERSTATUS, bufferStatus, 3);
 
-  HAL_SUBGHZ_ReadRegisters(&hsubghz, bufferStatus[3], data, 2);
-  HAL_SUBGHZ_ReadRegisters(&hsubghz, bufferStatus[2], data, 2);
-  HAL_SUBGHZ_ReadRegisters(&hsubghz, RXADDRESS, data, 1);
+  HAL_SUBGHZ_ReadBuffer(&hsubghz, bufferStatus[2], data, 2);
+  HAL_SUBGHZ_ReadBuffer(&hsubghz, RXADDRESS, data, 1);
+  HAL_SUBGHZ_ReadBuffer(&hsubghz, 0, data, 255);
 
   HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATUS, &status, 1);
   HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_PACKETSTATUS, packetStatus, 4);
