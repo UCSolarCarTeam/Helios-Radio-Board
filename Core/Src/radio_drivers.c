@@ -77,6 +77,13 @@ void RadioInit()
     uint16_t size10 = 8;
     HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_MODULATIONPARAMS, data8, size10);
 
+    int zero_buffer[256];
+    for(int i = 0; i < 257; i++){
+      zero_buffer[i] = 0
+    }
+    HAL_SUBGHZ_WriteBuffer(&hsubghz, 0, zero_buffer, 255);
+    osDelay(100);
+
 #if TX
     RadioSetupTX();
     HAL_GPIO_WritePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin, GPIO_PIN_SET);
@@ -226,7 +233,7 @@ void RadioReceive(uint8_t* data, uint8_t* size)
 
   HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_ERROR, irqStatus, 3);
 
-  HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_RXBUFFERSTATUS, bufferStatus, 3);
+  HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_RXBUFFERSTATUS, bufferStatus, 4);
 
   HAL_SUBGHZ_ReadBuffer(&hsubghz, bufferStatus[2], data, 2);
   HAL_SUBGHZ_ReadBuffer(&hsubghz, RXADDRESS, data, 1);
@@ -247,8 +254,10 @@ void RadioReceive(uint8_t* data, uint8_t* size)
 void radioLoop()
 {
   uint8_t data[255];
-  uint8_t size = 1;
+  uint8_t size = 8;
   data[0] = 0xA5;
+  for(int i = 1; i < 9; i++)
+    data[i] = i;
 #if TX
     RadioTransmit(data, size);
 #else
