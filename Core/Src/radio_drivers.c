@@ -218,7 +218,7 @@ void RadioReceive(uint8_t* data, uint8_t* size)
   uint8_t stats[7];
   uint8_t bufferStatus[4];
 
-  uint8_t data10[] = {0xFF, 0xFF, 0xFF};
+  uint8_t data10[] = {0x00, 0x00, 0x00};
   uint16_t size12 = 3;
   HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATUS, &status, 1);
 
