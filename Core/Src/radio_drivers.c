@@ -7,6 +7,14 @@
 
 #include "radio_drivers.h"
 
+#if LORA
+    uint8_t PACKETPARAMS[] = {0x00, 0x0C, 0x00, 0x08, 0x00, 0x00, 0x02, 0x00, 0x00};
+    uint16_t PACKETPARAMSIZE = 9;
+#elif FSK
+    uint8_t PACKETPARAMS[] = {0x00, 0x08, 0x04, 0x08, 0x00, 0x00};
+    uint16_t PACKETPARAMSIZE = 6;
+#endif
+
 void RadioInit() 
 {
     uint8_t status;
@@ -199,6 +207,8 @@ void RadioReceive(uint8_t* data, uint8_t* size)
   HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_RX, data10, size12);
 
   HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_ERROR, irqStatus, 3);
+
+  osDelay(10);
 
   HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_RXBUFFERSTATUS, bufferStatus, 4);
 
