@@ -23,7 +23,7 @@
 #define LORA 1
 #define FSK !LORA
 
-#define TX 1
+#define TX 0
 
 #if TX
     #define RF_HP 1

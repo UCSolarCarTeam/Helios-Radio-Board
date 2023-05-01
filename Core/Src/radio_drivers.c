@@ -204,6 +204,8 @@ void RadioReceive(uint8_t* data, uint8_t* size)
   uint8_t stats[7];
   uint8_t bufferStatus[4];
 
+  HAL_SUBGHZ_ReadBuffer(&hsubghz, 0, data, 255);
+
   uint8_t data10[] = {0x00, 0x00, 0x00};
   uint16_t size12 = 3;
   HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATUS, &status, 1);
@@ -235,7 +237,7 @@ void radioLoop()
 {
   uint8_t data[255];
   uint8_t size = 8;
-  data[0] = 0xA5;
+  data[0] = 0x11;
   for(int i = 1; i < 9; i++)
     data[i] = i;
 #if TX
