@@ -35,5 +35,5 @@ void RadioInit();
 void RadioSetupTX();
 void RadioSetupRX();
 int RadioTransmit(uint8_t* data, uint8_t size);
-void RadioReceive(uint8_t* data, uint8_t* size);
+void RadioReceiveStats();
 void radioLoop();

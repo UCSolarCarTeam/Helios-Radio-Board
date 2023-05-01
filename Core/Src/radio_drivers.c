@@ -147,6 +147,10 @@ void RadioSetupRX()
     HAL_GPIO_WritePin(FE_CTRL1_GPIO_Port, FE_CTRL1_Pin, GPIO_PIN_SET);
     HAL_GPIO_WritePin(FE_CTRL2_GPIO_Port, FE_CTRL2_Pin, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(FE_CTRL3_GPIO_Port, FE_CTRL3_Pin, GPIO_PIN_SET);
+
+    uint8_t data10[] = {0x00, 0x00, 0x00};
+    uint16_t size12 = 3;
+    HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_RX, data10, size12);
 }
 
 int RadioTransmit(uint8_t* data, uint8_t size)
@@ -195,54 +199,60 @@ int RadioTransmit(uint8_t* data, uint8_t size)
     return 1;
 }
 
-// ayo redbuffer is not the same as readregister?!?!?!?!?!?! shit I think i know what I did wrong
-void RadioReceive(uint8_t* data, uint8_t* size) 
+
+void RadioReceiveStats() 
 {
   uint8_t status;
   uint8_t irqStatus[3];
+  uint8_t error[3];
   uint8_t packetStatus[4];
   uint8_t stats[7];
-  uint8_t bufferStatus[4];
 
-  HAL_SUBGHZ_ReadBuffer(&hsubghz, 0, data, 255);
-
-  uint8_t data10[] = {0x00, 0x00, 0x00};
-  uint16_t size12 = 3;
-  HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATUS, &status, 1);
-
-  HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_RX, data10, size12);
-
-  HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_ERROR, irqStatus, 3);
-
-  osDelay(10);
-
-  HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_RXBUFFERSTATUS, bufferStatus, 4);
-
-  HAL_SUBGHZ_ReadBuffer(&hsubghz, bufferStatus[1], data, bufferStatus[0]);
-  HAL_SUBGHZ_ReadBuffer(&hsubghz, 0, data, 255);
-
+  HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_ERROR, error, 3);
+  HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_IRQSTATUS, irqStatus, 3);
   HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATUS, &status, 1);
   HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_PACKETSTATUS, packetStatus, 4);
   HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATS, stats, 7);
+}
 
-  uint8_t data11[] = {0xff, 0xff};
-  uint16_t size13 = 2;
-  HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_CLR_IRQSTATUS, data11, size13);
+void HAL_SUBGHZ_RxCpltCallback(SUBGHZ_HandleTypeDef *hsubghz) {
+    uint8_t bufferStatus[3];
+    HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_RXBUFFERSTATUS, bufferStatus, 3);
 
-  HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_STANDBY, data10, size12);
-  osDelay(100);
+    uint8_t data[bufferStatus[0]];
+    HAL_SUBGHZ_ReadBuffer(&hsubghz, bufferStatus[1], data, bufferStatus[0]);
+
+    //throw it into a queue here instead
+    if(data[0]) {
+        HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_SET);
+    } else {
+        HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_RESET);
+    }
+
+    uint8_t data11[] = {0xff, 0xff};
+    uint16_t size13 = 2;
+    HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_CLR_IRQSTATUS, data11, size13);
+
+    uint8_t data10[] = {0x00, 0x00, 0x00}; //no timeout, single-shot
+    uint16_t size12 = 3;
+    HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_RX, data10, size12);
 }
 
 void radioLoop()
 {
   uint8_t data[255];
   uint8_t size = 8;
-  data[0] = 0x11;
-  for(int i = 1; i < 9; i++)
-    data[i] = i;
 #if TX
+
+    if(HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin)) {
+        data[0] = 1;
+    } else {
+        data[0] = 0;
+    }
+
+    size = 1;
     RadioTransmit(data, size);
 #else
-    RadioReceive(data, &size);
+    RadioReceiveStats();
 #endif
 }
