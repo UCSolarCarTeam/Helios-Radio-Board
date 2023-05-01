@@ -31,7 +31,7 @@ void RadioInit()
     uint8_t regulator_mode[] = {0x01};
     HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_REGULATORMODE, regulator_mode, 1);
 
-    uint8_t data1[] = {0x01};
+    uint8_t data1[] = {0x00};
     uint16_t size1 = 1;
     HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_STANDBY, data1, size1);
 
@@ -157,7 +157,7 @@ int RadioTransmit(uint8_t* data, uint8_t size)
     uint8_t data1[] = {0x01};
     uint16_t size1 = 1;
 
-    if(size < RXADDRESS - TXADDRESS)  {
+    if(size <= RXADDRESS - TXADDRESS)  {
       HAL_SUBGHZ_WriteBuffer(&hsubghz, TXADDRESS, data, size);
 #if LORA
       PACKETPARAMS[3] = size;
@@ -169,6 +169,10 @@ int RadioTransmit(uint8_t* data, uint8_t size)
     else {
       return 0;
     }
+
+    //HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_TXCONTINUOUSWAVE, data1, 0);
+
+    HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATUS, &status, 1);
 
     uint8_t data10[] = {0x00, 0x00, 0x00};
     uint16_t size12 = 3;
