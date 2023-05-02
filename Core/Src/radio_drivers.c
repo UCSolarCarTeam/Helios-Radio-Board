@@ -190,10 +190,6 @@ int RadioTransmit(uint8_t* data, uint8_t size)
       HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_ERROR, irqstatus, 3);
     }
 
-    uint8_t data11[] = {0xff, 0xff};
-    uint16_t size13 = 2;
-    HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_CLR_IRQSTATUS, data11, size13);
-
     osDelay(10);
 
     return 1;
@@ -228,10 +224,6 @@ void HAL_SUBGHZ_RxCpltCallback(SUBGHZ_HandleTypeDef *hsubghz) {
     } else {
         HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_RESET);
     }
-
-    uint8_t data11[] = {0xff, 0xff};
-    uint16_t size13 = 2;
-    HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_CLR_IRQSTATUS, data11, size13);
 
     uint8_t data10[] = {0x00, 0x00, 0x00}; //no timeout, single-shot
     uint16_t size12 = 3;
