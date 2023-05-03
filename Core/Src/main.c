@@ -108,7 +108,7 @@ int main(void)
   MX_SUBGHZ_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
-
+  RadioInit();
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -123,7 +123,6 @@ int main(void)
   /* USER CODE END RTOS_SEMAPHORES */
 
   /* USER CODE BEGIN RTOS_TIMERS */
-  /* start timers, add new ones, ... */
   /* USER CODE END RTOS_TIMERS */
 
   /* USER CODE BEGIN RTOS_QUEUES */
@@ -139,11 +138,10 @@ int main(void)
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
-  RadioInit();
   /* USER CODE END RTOS_EVENTS */
 
   /* Start scheduler */
-  //osKernelStart();
+  osKernelStart();
 
   /* We should never get here as control is now taken by the scheduler */
   /* Infinite loop */

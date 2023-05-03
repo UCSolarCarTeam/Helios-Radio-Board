@@ -16,60 +16,60 @@
 #endif
 
 void RadioSetCommand(SUBGHZ_RadioSetCmd_t Command, uint8_t *pBuffer, uint16_t Size) {
-    if(osMutexWait(SUBGHZMutexHandle, 0) == osOK) {
+    //if(osMutexWait(SUBGHZMutexHandle, 0) == osOK)
+    {
         HAL_SUBGHZ_ExecSetCmd(&hsubghz, Command, pBuffer, Size);
+        //osMutexRelease(SUBGHZMutexHandle);
     }
-
-    osMutexRelease(SUBGHZMutexHandle);
 }
 void RadioGetCommand(SUBGHZ_RadioGetCmd_t Command, uint8_t *pBuffer, uint16_t Size) {
-    if(osMutexWait(SUBGHZMutexHandle, 0) == osOK) {
+    //if(osMutexWait(SUBGHZMutexHandle, 0) == osOK)
+    {
         HAL_SUBGHZ_ExecGetCmd(&hsubghz, Command, pBuffer, Size);
+        //osMutexRelease(SUBGHZMutexHandle);
     }
-
-    osMutexRelease(SUBGHZMutexHandle);
 }
 void RadioWriteBuffer(uint8_t Offset, uint8_t *pBuffer, uint16_t Size) {
-    if(osMutexWait(SUBGHZMutexHandle, 0) == osOK) {
+    //if(osMutexWait(SUBGHZMutexHandle, 0) == osOK)
+    {
         HAL_SUBGHZ_WriteBuffer(&hsubghz, Offset, pBuffer, Size);
+        //osMutexRelease(SUBGHZMutexHandle);
     }
-
-    osMutexRelease(SUBGHZMutexHandle);
 }
 void RadioReadBuffer(uint8_t Offset, uint8_t *pBuffer, uint16_t Size) {
-    if(osMutexWait(SUBGHZMutexHandle, 0) == osOK) {
+    //if(osMutexWait(SUBGHZMutexHandle, 0) == osOK)
+    {
         HAL_SUBGHZ_ReadBuffer(&hsubghz, Offset, pBuffer, Size);
+        //osMutexRelease(SUBGHZMutexHandle);
     }
-
-    osMutexRelease(SUBGHZMutexHandle);
 }
 void RadioWriteRegisters(uint16_t Address, uint8_t *pBuffer, uint16_t Size) {
-    if(osMutexWait(SUBGHZMutexHandle, 0) == osOK) {
+    //if(osMutexWait(SUBGHZMutexHandle, 0) == osOK)
+    {
         HAL_SUBGHZ_WriteRegisters(&hsubghz, Address, pBuffer, Size);
+        //osMutexRelease(SUBGHZMutexHandle);
     }
-
-    osMutexRelease(SUBGHZMutexHandle);
 }
 void RadioReadRegisters(uint16_t Address, uint8_t *pBuffer, uint16_t Size) {
-    if(osMutexWait(SUBGHZMutexHandle, 0) == osOK) {
+    //if(osMutexWait(SUBGHZMutexHandle, 0) == osOK)
+    {
         HAL_SUBGHZ_ReadRegisters(&hsubghz, Address, pBuffer, Size);
+        //osMutexRelease(SUBGHZMutexHandle);
     }
-
-    osMutexRelease(SUBGHZMutexHandle);
 }
 void RadioWriteRegister(uint16_t Address, uint8_t Value) {
-    if(osMutexWait(SUBGHZMutexHandle, 0) == osOK) {
+    //if(osMutexWait(SUBGHZMutexHandle, 0) == osOK)
+    {
         HAL_SUBGHZ_WriteRegister(&hsubghz, Address, Value);
+        //osMutexRelease(SUBGHZMutexHandle);
     }
-
-    osMutexRelease(SUBGHZMutexHandle);
 }
 void RadioReadRegister(uint16_t Address, uint8_t *pValue) {
-    if(osMutexWait(SUBGHZMutexHandle, 0) == osOK) {
+    //if(osMutexWait(SUBGHZMutexHandle, 0) == osOK)
+    {
         HAL_SUBGHZ_ReadRegister(&hsubghz, Address, pValue);
+        //osMutexRelease(SUBGHZMutexHandle);
     }
-
-    osMutexRelease(SUBGHZMutexHandle);
 }
 
 void RadioInit() 
