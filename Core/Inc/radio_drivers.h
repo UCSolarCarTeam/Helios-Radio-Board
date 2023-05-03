@@ -24,16 +24,32 @@
 #define FSK !LORA
 
 #define TX 0
+#define RX !TX
 
 #if TX
     #define RF_HP 1
 #endif
 
+#define RADIO_RECEIVE_INTERRUPT_QUEUE_COUNT 16
+
 extern SUBGHZ_HandleTypeDef hsubghz;
+extern osMutexId_t SUBGHZMutexHandle;
+extern osMessageQueueId_t RadioReceiveInterruptQueue;
+
+//wrappers to use radio spi mutex
+void RadioSetCommand(SUBGHZ_RadioSetCmd_t Command, uint8_t *pBuffer, uint16_t Size);
+void RadioGetCommand(SUBGHZ_RadioGetCmd_t Command, uint8_t *pBuffer, uint16_t Size);
+void RadioWriteBuffer(uint8_t Offset, uint8_t *pBuffer, uint16_t Size);
+void RadioReadBuffer(uint8_t Offset, uint8_t *pBuffer, uint16_t Size);
+void RadioWriteRegisters(uint16_t Address, uint8_t *pBuffer, uint16_t Size);
+void RadioReadRegisters(uint16_t Address, uint8_t *pBuffer, uint16_t Size);
+void RadioWriteRegister(uint16_t Address, uint8_t Value);
+void RadioReadRegister(uint16_t Address, uint8_t *pValue);
 
 void RadioInit();
 void RadioSetupTX();
 void RadioSetupRX();
+void RadioSendTXContinuousWave();
 int RadioTransmit(uint8_t* data, uint8_t size);
 void RadioReceiveStats();
 void radioLoop();

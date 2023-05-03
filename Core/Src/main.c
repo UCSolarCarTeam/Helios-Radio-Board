@@ -51,7 +51,14 @@ const osThreadAttr_t defaultTask_attributes = {
   .stack_size = 128 * 4
 };
 /* USER CODE BEGIN PV */
-
+/* Definitions for SPIMutex */
+osMutexId_t SUBGHZMutexHandle;
+const osMutexAttr_t SUBGHZMutex_attributes = {
+  .name = "SUBGHZMutex"
+};
+#if RX
+osMessageQueueId_t RadioReceiveInterruptQueue;
+#endif
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -101,7 +108,6 @@ int main(void)
   MX_SUBGHZ_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
-  RadioInit();
 
   /* USER CODE END 2 */
 
@@ -109,7 +115,7 @@ int main(void)
   osKernelInitialize();
 
   /* USER CODE BEGIN RTOS_MUTEX */
-  /* add mutexes, ... */
+  SUBGHZMutexHandle = osMutexNew(&SUBGHZMutex_attributes);
   /* USER CODE END RTOS_MUTEX */
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
@@ -121,7 +127,7 @@ int main(void)
   /* USER CODE END RTOS_TIMERS */
 
   /* USER CODE BEGIN RTOS_QUEUES */
-  /* add queues, ... */
+  RadioReceiveInterruptQueue = osMessageQueueNew(RADIO_RECEIVE_INTERRUPT_QUEUE_COUNT, sizeof(uint8_t), NULL);
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
@@ -133,11 +139,11 @@ int main(void)
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
-  /* add events, ... */
+  RadioInit();
   /* USER CODE END RTOS_EVENTS */
 
   /* Start scheduler */
-  osKernelStart();
+  //osKernelStart();
 
   /* We should never get here as control is now taken by the scheduler */
   /* Infinite loop */
@@ -145,7 +151,7 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-
+	  radioLoop();
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */

@@ -75,7 +75,6 @@ void Error_Handler(void);
 #define RED_LED_Pin GPIO_PIN_11
 #define RED_LED_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
-
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
