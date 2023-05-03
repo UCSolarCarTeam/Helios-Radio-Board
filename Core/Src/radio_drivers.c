@@ -123,7 +123,7 @@ void RadioSetupTX()
     uint16_t size9 = 2;
     HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_TXPARAMS, data7, size9);
 
-    uint8_t data9[] = {0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00};
+    uint8_t data9[] = {0x02, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}; //enable RX done, TX done, and RX/TX timeout interrupts on IRQ line 1 (from my understanding, an IRQ line can only halt processor once at a time)
     uint16_t size11 = 8;
     HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_CFG_DIOIRQ, data9, size11);
 
@@ -195,28 +195,12 @@ int RadioTransmit(uint8_t* data, uint8_t size)
     return 1;
 }
 
-
-void RadioReceiveStats() 
-{
-  uint8_t status;
-  uint8_t irqStatus[3];
-  uint8_t error[3];
-  uint8_t packetStatus[4];
-  uint8_t stats[7];
-
-  HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_ERROR, error, 3);
-  HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_IRQSTATUS, irqStatus, 3);
-  HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATUS, &status, 1);
-  HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_PACKETSTATUS, packetStatus, 4);
-  HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATS, stats, 7);
-}
-
 void HAL_SUBGHZ_RxCpltCallback(SUBGHZ_HandleTypeDef *hsubghz) {
     uint8_t bufferStatus[3];
-    HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_RXBUFFERSTATUS, bufferStatus, 3);
+    HAL_SUBGHZ_ExecGetCmd(hsubghz, RADIO_GET_RXBUFFERSTATUS, bufferStatus, 3);
 
     uint8_t data[bufferStatus[0]];
-    HAL_SUBGHZ_ReadBuffer(&hsubghz, bufferStatus[1], data, bufferStatus[0]);
+    HAL_SUBGHZ_ReadBuffer(hsubghz, bufferStatus[1], data, bufferStatus[0]);
 
     //throw it into a queue here instead
     if(data[0]) {
@@ -227,7 +211,22 @@ void HAL_SUBGHZ_RxCpltCallback(SUBGHZ_HandleTypeDef *hsubghz) {
 
     uint8_t data10[] = {0x00, 0x00, 0x00}; //no timeout, single-shot
     uint16_t size12 = 3;
-    HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_RX, data10, size12);
+    HAL_SUBGHZ_ExecSetCmd(hsubghz, RADIO_SET_RX, data10, size12);
+}
+
+void RadioReceiveStats() 
+{
+  uint8_t status;
+  uint8_t irqStatus[3];
+  uint8_t error[3];
+  uint8_t packetStatus[4];
+  uint8_t stats[7];
+
+  //HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_ERROR, error, 3);
+  //HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_IRQSTATUS, irqStatus, 3);
+  //HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATUS, &status, 1);
+  //HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_PACKETSTATUS, packetStatus, 4);
+  //HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATS, stats, 7);
 }
 
 void radioLoop()
