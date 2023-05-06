@@ -253,7 +253,12 @@ void RadioReceive() {
     RadioReadBuffer(bufferStatus[1], data, bufferStatus[0]);
 
     //throw it into a queue here instead
-    if(data[0]) {
+    struct RadioData radioData = {0};
+    radioData.size = bufferStatus[0] - 2; //minus two cause 2 of those arte from ID
+    memcpy(radioData.ID, data[0], 2);
+    memcpy(radioData.data, data[2], radioData.size);
+    //osMessageQueuePut(RadioDataQueue, &radioData, 0, 0);
+    if(radioData.ID == 0) {
         HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_SET);
     } else {
         HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_RESET);

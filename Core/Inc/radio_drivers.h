@@ -7,6 +7,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <string.h>
 #include "main.h"
 #include "cmsis_os2.h"
 #include "stm32wlxx_hal.h"
@@ -31,9 +32,18 @@
 #endif
 
 #define RADIO_RECEIVE_INTERRUPT_QUEUE_COUNT 16
+#define RADIO_DATA_QUEUE_COUNT 16
+
+struct RadioData {
+    uint16_t ID;
+    uint8_t data[8];
+    uint8_t size;
+};
+
 
 extern SUBGHZ_HandleTypeDef hsubghz;
 extern osMutexId_t SUBGHZMutexHandle;
+extern osMessageQueueId_t RadioDataQueue;
 extern osMessageQueueId_t RadioReceiveInterruptQueue;
 
 //wrappers to use radio spi mutex

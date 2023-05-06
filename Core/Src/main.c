@@ -56,6 +56,8 @@ osMutexId_t SUBGHZMutexHandle;
 const osMutexAttr_t SUBGHZMutex_attributes = {
   .name = "SUBGHZMutex"
 };
+
+osMessageQueueId_t RadioDataQueue;
 #if RX
 osMessageQueueId_t RadioReceiveInterruptQueue;
 #endif
@@ -126,6 +128,7 @@ int main(void)
   /* USER CODE END RTOS_TIMERS */
 
   /* USER CODE BEGIN RTOS_QUEUES */
+  RadioDataQueue = osMessageQueueNew(RADIO_DATA_QUEUE_COUNT, sizeof(struct RadioData), NULL);
 #if RX
   RadioReceiveInterruptQueue = osMessageQueueNew(RADIO_RECEIVE_INTERRUPT_QUEUE_COUNT, sizeof(uint8_t), NULL);
 #endif
