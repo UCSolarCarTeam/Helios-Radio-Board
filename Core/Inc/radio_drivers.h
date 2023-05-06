@@ -8,7 +8,7 @@
 
 #include <stdint.h>
 #include "main.h"
-#include "cmsis_os.h"
+#include "cmsis_os2.h"
 #include "stm32wlxx_hal.h"
 #include "stm32wlxx_hal_subghz.h"
 

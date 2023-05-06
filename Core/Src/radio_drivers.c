@@ -163,6 +163,7 @@ void RadioInit()
 #endif
 }
 
+#if TX
 void RadioSetupTX()
 {
     osDelay(1);
@@ -191,24 +192,6 @@ void RadioSetupTX()
 #endif
 }
 
-void RadioSetupRX()
-{   
-    uint8_t data9[] = {0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}; //enable RX done, TX done, and RX/TX timeout interrupts on IRQ line 1 (from my understanding, an IRQ line can only halt processor once at a time)
-    uint16_t size11 = 8;
-    RadioSetCommand(RADIO_CFG_DIOIRQ, data9, size11);
-
-    HAL_GPIO_WritePin(FE_CTRL1_GPIO_Port, FE_CTRL1_Pin, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(FE_CTRL2_GPIO_Port, FE_CTRL2_Pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(FE_CTRL3_GPIO_Port, FE_CTRL3_Pin, GPIO_PIN_SET);
-
-    uint8_t timeout[] = {0xFF, 0xFF, 0xFF}; //no timeout, continuous receive
-    RadioSetCommand(RADIO_SET_RX, timeout, 3);
-
-    osDelay(100);
-    uint8_t bufferStatus[2];
-    RadioGetCommand(RADIO_GET_RXBUFFERSTATUS, bufferStatus, 2);
-}
-
 void RadioSendTXContinuousWave() {
     RadioSetCommand(RADIO_SET_TXCONTINUOUSWAVE, NULL, 0); //used to debug and create a wave and output freq
 }
@@ -234,15 +217,33 @@ int RadioTransmit(uint8_t* data, uint8_t size)
 
     return 1;
 }
+#elif RX
+void RadioSetupRX()
+{   
+    uint8_t data9[] = {0x02, 0x02, 0x02, 0x02, 0x00, 0x00, 0x00, 0x00}; //enable RX done, TX done, and RX/TX timeout interrupts on IRQ line 1 (from my understanding, an IRQ line can only halt processor once at a time)
+    uint16_t size11 = 8;
+    RadioSetCommand(RADIO_CFG_DIOIRQ, data9, size11);
+
+    HAL_GPIO_WritePin(FE_CTRL1_GPIO_Port, FE_CTRL1_Pin, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(FE_CTRL2_GPIO_Port, FE_CTRL2_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(FE_CTRL3_GPIO_Port, FE_CTRL3_Pin, GPIO_PIN_SET);
+
+    uint8_t timeout[] = {0xFF, 0xFF, 0xFF}; //no timeout, continuous receive
+    RadioSetCommand(RADIO_SET_RX, timeout, 3);
+
+    osDelay(100);
+    uint8_t bufferStatus[2];
+    RadioGetCommand(RADIO_GET_RXBUFFERSTATUS, bufferStatus, 2);
+}
 
 void HAL_SUBGHZ_RxCpltCallback(SUBGHZ_HandleTypeDef *hsubghz) {
     uint8_t messageReceived = 1;
-    osMessageQueuePut(RadioReceiveInterruptQueue, &messageReceived, 0, 0); //use sempahore instead, for the future
+    osMessageQueuePut(RadioReceiveInterruptQueue, &messageReceived, 0, 0); //use semaphore instead, for the future
 }
 
 void RadioReceive() {
     uint8_t receive;
-    //osMessageQueueGet(RadioReceiveInterruptQueue, &receive, 0, osWaitForever);
+    osMessageQueueGet(RadioReceiveInterruptQueue, &receive, 0, osWaitForever);
     uint8_t IRQClear[] = {0x00, 0x02};
     //RadioSetCommand(RADIO_CLR_IRQSTATUS, IRQClear, 2);
 
@@ -258,7 +259,7 @@ void RadioReceive() {
         HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_RESET);
     }
 }
-
+#endif
 void RadioReceiveStats() 
 {
   uint8_t status;
