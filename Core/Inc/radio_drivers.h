@@ -40,7 +40,6 @@ struct RadioData {
     uint8_t size;
 };
 
-
 extern SUBGHZ_HandleTypeDef hsubghz;
 extern osMutexId_t SUBGHZMutexHandle;
 extern osMessageQueueId_t RadioDataQueue;

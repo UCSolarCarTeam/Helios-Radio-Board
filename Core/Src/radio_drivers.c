@@ -8,11 +8,13 @@
 #include "radio_drivers.h"
 
 #if LORA
+    // 12 preamble symbols, explicit header (variable size), size (overwritten), CRC disabled, standard IQ setup (no idea)
+    uint8_t PACKETPARAMS[] = {0x00, 0x0C, 0x00, 0x08, 0x00, 0x00};
+    uint16_t PACKETPARAMSIZE = 6;
+#elif FSK
+    //12 preamble symbols, preamble detection disabled, 8 bit sync word,addres comparison/filtering disabled, fixed payload, payload_length (overwritten), CRC diabled, whitening disabled
     uint8_t PACKETPARAMS[] = {0x00, 0x0C, 0x00, 0x08, 0x00, 0x00, 0x02, 0x00, 0x00};
     uint16_t PACKETPARAMSIZE = 9;
-#elif FSK
-    uint8_t PACKETPARAMS[] = {0x00, 0x08, 0x04, 0x08, 0x00, 0x00};
-    uint16_t PACKETPARAMSIZE = 6;
 #endif
 
 void RadioSetCommand(SUBGHZ_RadioSetCmd_t Command, uint8_t *pBuffer, uint16_t Size) {
@@ -76,26 +78,32 @@ void RadioInit()
 {
     osDelay(1);
 
+    //enable SMPS clock detection, to use external TCXO
     uint8_t payload0[] = {SMPS_CLK_DET_ENABLE};
     uint16_t address0 = SUBGHZ_SMPSC0R;
     uint16_t size0 = 1;
     RadioWriteRegisters(address0, payload0, size0);
 
+    //SMPS mode used
     uint8_t regulator_mode[] = {0x01};
     RadioSetCommand(RADIO_SET_REGULATORMODE, regulator_mode, 1);
 
+    //set standby with RC13 clock
     uint8_t data1[] = {0x00};
     uint16_t size1 = 1;
     RadioSetCommand(RADIO_SET_STANDBY, data1, size1);
 
+    //set address for relevant buffers
     uint8_t data2[] = {TXADDRESS, RXADDRESS};
     uint16_t size2 = 2;
     RadioSetCommand(RADIO_SET_BUFFERBASEADDRESS, data2, size2);
 
 
 #if LORA
+    //LORA packet type
     uint8_t data3[] = {0x01};
 #elif FSK
+    //FSK packet type
     uint8_t data3[] = {0x00};
 #endif
     uint16_t size4 = 1;
@@ -122,8 +130,6 @@ void RadioInit()
     RadioWriteRegisters(SUBGHZ_LSYNCRL_ADDRESS, SUBGHZ_LSYNCRL, SUBGHZ_LSYNCRL_SIZE);
 #endif
 
-    //uint8_t data5[] = {0x05, 0x74, 0x2D, 0xE0}; //91.5 MHz
-    //uint8_t data5[] = {0x36, 0x89, 0xCA, 0xC0}; //915 MHz
     uint32_t channel = (uint32_t) ((((uint64_t) RADIO_FREQUENCY)<<25)/(XTAL_FREQ) );
     uint8_t data5[4];
     data5[0] = ( uint8_t )( ( channel >> 24 ) & 0xFF );
@@ -168,16 +174,18 @@ void RadioSetupTX()
 {
     osDelay(1);
 
+    // HP PA mode, HP PA max power
     uint8_t data6[] = {0x04, 0x07, 0x00, 0x01};
     uint16_t size8 = 4;
     RadioSetCommand(RADIO_SET_PACONFIG, data6, size8);
 
-    //not sure how ramp up time affects performance, must research
-    uint8_t data7[] = {0x16, 0x07};
+    //22db power, 800 μs ramp time. not sure how ramp up time affects performance, must research
+    uint8_t data7[] = {0x16, 0x05};
     uint16_t size9 = 2;
     RadioSetCommand(RADIO_SET_TXPARAMS, data7, size9);
 
-    uint8_t data9[] = {0x02, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}; //enable RX done, TX done, and RX/TX timeout interrupts on IRQ line 1 (from my understanding, an IRQ line can only halt processor once at a time)
+    //enable RX done, TX done, and RX/TX timeout interrupts on IRQ line 1 (from my understanding, an IRQ line can only halt processor once at a time)
+    uint8_t data9[] = {0x02, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}; 
     uint16_t size11 = 8;
     RadioSetCommand(RADIO_CFG_DIOIRQ, data9, size11);
 
@@ -220,7 +228,8 @@ int RadioTransmit(uint8_t* data, uint8_t size)
 #elif RX
 void RadioSetupRX()
 {   
-    uint8_t data9[] = {0x02, 0x02, 0x02, 0x02, 0x00, 0x00, 0x00, 0x00}; //enable RX done, TX done, and RX/TX timeout interrupts on IRQ line 1 (from my understanding, an IRQ line can only halt processor once at a time)
+    //enable RX done, TX done, and RX/TX timeout interrupts on IRQ line 1 (from my understanding, an IRQ line can only halt processor once at a time)
+    uint8_t data9[] = {0x02, 0x02, 0x02, 0x02, 0x00, 0x00, 0x00, 0x00};
     uint16_t size11 = 8;
     RadioSetCommand(RADIO_CFG_DIOIRQ, data9, size11);
 
@@ -228,12 +237,9 @@ void RadioSetupRX()
     HAL_GPIO_WritePin(FE_CTRL2_GPIO_Port, FE_CTRL2_Pin, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(FE_CTRL3_GPIO_Port, FE_CTRL3_Pin, GPIO_PIN_SET);
 
-    uint8_t timeout[] = {0xFF, 0xFF, 0xFF}; //no timeout, continuous receive
+    //no timeout, continuous receive
+    uint8_t timeout[] = {0xFF, 0xFF, 0xFF};
     RadioSetCommand(RADIO_SET_RX, timeout, 3);
-
-    osDelay(100);
-    uint8_t bufferStatus[2];
-    RadioGetCommand(RADIO_GET_RXBUFFERSTATUS, bufferStatus, 2);
 }
 
 void HAL_SUBGHZ_RxCpltCallback(SUBGHZ_HandleTypeDef *hsubghz) {
@@ -242,10 +248,12 @@ void HAL_SUBGHZ_RxCpltCallback(SUBGHZ_HandleTypeDef *hsubghz) {
 }
 
 void RadioReceive() {
+    //wait for receive command from RX interrupt
     uint8_t receive;
     osMessageQueueGet(RadioReceiveInterruptQueue, &receive, 0, osWaitForever);
+    //clear interrupt since IRQ_CLR from handler can fail
     uint8_t IRQClear[] = {0x00, 0x02};
-    //RadioSetCommand(RADIO_CLR_IRQSTATUS, IRQClear, 2);
+    RadioSetCommand(RADIO_CLR_IRQSTATUS, IRQClear, 2);
 
     uint8_t bufferStatus[2];
     RadioGetCommand(RADIO_GET_RXBUFFERSTATUS, bufferStatus, 2);
@@ -254,10 +262,11 @@ void RadioReceive() {
 
     //throw it into a queue here instead
     struct RadioData radioData = {0};
-    radioData.size = bufferStatus[0] - 2; //minus two cause 2 of those arte from ID
-    memcpy(radioData.ID, data[0], 2);
-    memcpy(radioData.data, data[2], radioData.size);
+    radioData.size = bufferStatus[0] - 2; //minus two cause 2 of those arse from ID
+    memcpy(&(radioData.ID), data, 2);
+    memcpy(&(radioData.data), &(data[2]), radioData.size);
     //osMessageQueuePut(RadioDataQueue, &radioData, 0, 0);
+    
     if(radioData.ID == 0) {
         HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_SET);
     } else {
@@ -265,6 +274,7 @@ void RadioReceive() {
     }
 }
 #endif
+
 void RadioReceiveStats() 
 {
   uint8_t status;
@@ -273,18 +283,18 @@ void RadioReceiveStats()
   uint8_t packetStatus[4];
   uint8_t stats[7];
 
-  //RadioGetCommand(RADIO_GET_ERROR, error, 3);
-  //RadioGetCommand(RADIO_GET_IRQSTATUS, irqStatus, 3);
-  //RadioGetCommand(RADIO_GET_STATUS, &status, 1);
-  //RadioGetCommand(RADIO_GET_PACKETSTATUS, packetStatus, 4);
-  //RadioGetCommand(RADIO_GET_STATS, stats, 7);
+  RadioGetCommand(RADIO_GET_ERROR, error, 3);
+  RadioGetCommand(RADIO_GET_IRQSTATUS, irqStatus, 3);
+  RadioGetCommand(RADIO_GET_STATUS, &status, 1);
+  RadioGetCommand(RADIO_GET_PACKETSTATUS, packetStatus, 4);
+  RadioGetCommand(RADIO_GET_STATS, stats, 7);
 }
 
 void radioLoop()
 {
-  uint8_t data[255];
-  uint8_t size = 8;
 #if TX
+    uint8_t data[255];
+    uint8_t size = 8;
     if(HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin)) {
         data[0] = 1;
     } else {
