@@ -154,7 +154,7 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-	  radioLoop();
+
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -220,9 +220,9 @@ static void MX_SUBGHZ_Init(void)
   /* USER CODE END SUBGHZ_Init 0 */
 
   /* USER CODE BEGIN SUBGHZ_Init 1 */
-
+  //CLK = 32MHz, and acoridng to SUBGHZ module datasheet max SPI CLK = 16MHz, using 8MHz to be safe
   /* USER CODE END SUBGHZ_Init 1 */
-  hsubghz.Init.BaudratePrescaler = SUBGHZSPI_BAUDRATEPRESCALER_16;
+  hsubghz.Init.BaudratePrescaler = SUBGHZSPI_BAUDRATEPRESCALER_4;
   if (HAL_SUBGHZ_Init(&hsubghz) != HAL_OK)
   {
     Error_Handler();
