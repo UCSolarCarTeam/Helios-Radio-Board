@@ -257,17 +257,17 @@ void RadioReceive() {
 
     uint8_t bufferStatus[2];
     RadioGetCommand(RADIO_GET_RXBUFFERSTATUS, bufferStatus, 2);
-    uint8_t data[bufferStatus[0]];
+    uint8_t data[8];
     RadioReadBuffer(bufferStatus[1], data, bufferStatus[0]);
 
     //throw it into a queue here instead
     struct RadioData radioData = {0};
-    radioData.size = bufferStatus[0] - 2; //minus two cause 2 of those arse from ID
+    radioData.size = bufferStatus[0] - 2; //minus two cause 2 of those are from ID
     memcpy(&(radioData.ID), data, 2);
     memcpy(&(radioData.data), &(data[2]), radioData.size);
     //osMessageQueuePut(RadioDataQueue, &radioData, 0, 0);
     
-    if(radioData.ID == 0) {
+    if(radioData.ID == 1 && radioData.data[0] == 1) {
         HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_SET);
     } else {
         HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_RESET);
@@ -295,12 +295,14 @@ void radioLoop()
 #if TX
     uint8_t data[255];
     uint8_t size = 8;
+    uint16_t ID = 1;
+    memcpy(data, &ID, 2);
     if(HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin)) {
-        data[0] = 1;
+        data[2] = 1;
     } else {
-        data[0] = 0;
+        data[2] = 0;
     }
-    size = 1;
+    size = 3;
     RadioTransmit(data, size);
 #elif RX
     RadioReceive();

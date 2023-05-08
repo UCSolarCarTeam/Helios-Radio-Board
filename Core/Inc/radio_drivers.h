@@ -24,7 +24,7 @@
 #define LORA 1
 #define FSK !LORA
 
-#define TX 0
+#define TX 1
 #define RX !TX
 
 #if TX
