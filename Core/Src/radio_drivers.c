@@ -261,11 +261,11 @@ void RadioReceive() {
     RadioReadBuffer(bufferStatus[1], data, bufferStatus[0]);
 
     //throw it into a queue here instead
-    struct RadioData radioData = {0};
+    RadioData radioData = {0};
     radioData.size = bufferStatus[0] - 2; //minus two cause 2 of those are from ID
     memcpy(&(radioData.ID), data, 2);
     memcpy(&(radioData.data), &(data[2]), radioData.size);
-    //osMessageQueuePut(RadioDataQueue, &radioData, 0, 0);
+    osMessageQueuePut(RadioDataQueue, &radioData, 0, 0);
     
     if(radioData.ID == 1 && radioData.data[0] == 1) {
         HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_SET);
@@ -290,21 +290,32 @@ void RadioReceiveStats()
   RadioGetCommand(RADIO_GET_STATS, stats, 7);
 }
 
-void radioLoop()
+void RadioLoop()
 {
 #if TX
-    uint8_t data[255];
-    uint8_t size = 8;
-    uint16_t ID = 1;
-    memcpy(data, &ID, 2);
-    if(HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin)) {
-        data[2] = 1;
-    } else {
-        data[2] = 0;
-    }
-    size = 3;
-    RadioTransmit(data, size);
+    RadioData radioData = {0};
+
+    osMessageQueueGet(RadioDataQueue, &radioData, NULL, 0);
+
+    uint8_t data[10];
+    memcpy(data, &(radioData.ID), 2);
+    memcpy(&(data[2]), radioData.data, radioData.size);
+    RadioTransmit(data, radioData.size + 2);
 #elif RX
     RadioReceive();
 #endif
+}
+
+/**
+  * @brief  Function implementing the RadioTask thread.
+  * @param  argument: Not used
+  * @retval None
+*/
+void RadioTask(void *argument)
+{
+  /* Infinite loop */
+  for(;;)
+  {
+    RadioLoop();
+  }
 }

@@ -51,6 +51,22 @@ const osThreadAttr_t defaultTask_attributes = {
   .stack_size = 128 * 4
 };
 /* USER CODE BEGIN PV */
+/* Definitions for RadioTask */
+osThreadId_t radioTaskHandle;
+const osThreadAttr_t radioTask_attributes = {
+  .name = "RadioTask",
+  .priority = (osPriority_t) osPriorityHigh,
+  .stack_size = 128 * 4
+};
+
+/* Definitions for ToggleTask */
+osThreadId_t toggleTaskHandle;
+const osThreadAttr_t toggleTask_attributes = {
+  .name = "ToggleTask",
+  .priority = (osPriority_t) osPriorityNormal,
+  .stack_size = 128 * 4
+};
+
 /* Definitions for SPIMutex */
 osMutexId_t SUBGHZMutexHandle;
 const osMutexAttr_t SUBGHZMutex_attributes = {
@@ -69,6 +85,7 @@ static void MX_GPIO_Init(void);
 static void MX_SUBGHZ_Init(void);
 static void MX_USART2_UART_Init(void);
 void StartDefaultTask(void *argument);
+void ToggleTask(void *argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -117,7 +134,7 @@ int main(void)
   osKernelInitialize();
 
   /* USER CODE BEGIN RTOS_MUTEX */
-  SUBGHZMutexHandle = osMutexNew(&SUBGHZMutex_attributes);
+  //SUBGHZMutexHandle = osMutexNew(&SUBGHZMutex_attributes); //unused
   /* USER CODE END RTOS_MUTEX */
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
@@ -136,10 +153,14 @@ int main(void)
 
   /* Create the thread(s) */
   /* creation of defaultTask */
-  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+  //defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  /* add threads, ... */
+  /* creation of toggleTask */
+  radioTaskHandle = osThreadNew(RadioTask, NULL, &radioTask_attributes);
+
+  /* creation of toggleTask */
+  toggleTaskHandle = osThreadNew(ToggleTask, NULL, &toggleTask_attributes);
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -336,7 +357,40 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+/**
+  * @brief  Function implementing the toggleTask thread.
+  * @param  argument: Not used
+  * @retval None
+  */
+void ToggleTask(void *argument)
+{
+  /* USER CODE BEGIN 5 */
+  RadioData radioData = {0};
 
+  /* Infinite loop */
+  for(;;)
+  {
+#if TX
+    radioData.ID = 1;
+    if(HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin)) {
+        radioData.data[0] = 1;
+    } else {
+        radioData.data[0] = 0;
+    }
+    radioData.size = 1;
+    osMessageQueuePut(RadioDataQueue, &radioData, 0, 0);
+    osDelay(5);
+#elif RX
+    osMessageQueueGet(RadioDataQueue, &radioData, NULL, 0);
+    if(radioData.ID == 1 && radioData.data[0] == 1) {
+        HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_SET);
+    } else {
+        HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_RESET);
+    }
+#endif
+  }
+  /* USER CODE END 5 */
+}
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -352,7 +406,6 @@ void StartDefaultTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    radioLoop();
   }
   /* USER CODE END 5 */
 }
