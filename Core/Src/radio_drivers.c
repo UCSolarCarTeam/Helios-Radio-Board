@@ -17,6 +17,7 @@
     uint16_t PACKETPARAMSIZE = 9;
 #endif
 
+//There must be a nicer way to have Mutexes or change SUBGHZ_Handle name be used or unused with a single macro (perhaps macro function declaration)
 void RadioSetCommand(SUBGHZ_RadioSetCmd_t Command, uint8_t *pBuffer, uint16_t Size) {
     //if(osMutexWait(SUBGHZMutexHandle, 0) == osOK)
     {
@@ -118,7 +119,7 @@ void RadioInit()
     uint16_t SUBGHZ_GBSYNCR_SIZE = 1;
     RadioWriteRegisters(SUBGHZ_GBSYNCR_ADDRESS, SUBGHZ_GBSYNCR, SUBGHZ_GBSYNCR_SIZE);
 
-    //sync word
+    //sync words (must the same on receiver and transmitter)
     uint8_t SUBGHZ_LSYNCRH[] = {0xA5};
     uint16_t SUBGHZ_LSYNCRH_ADDRESS = 0x740;
     uint16_t SUBGHZ_LSYNCRH_SIZE = 1;
@@ -130,6 +131,7 @@ void RadioInit()
     RadioWriteRegisters(SUBGHZ_LSYNCRL_ADDRESS, SUBGHZ_LSYNCRL, SUBGHZ_LSYNCRL_SIZE);
 #endif
 
+    //used to set frequency, copied from stm32wl code package
     uint32_t channel = (uint32_t) ((((uint64_t) RADIO_FREQUENCY)<<25)/(XTAL_FREQ) );
     uint8_t data5[4];
     data5[0] = ( uint8_t )( ( channel >> 24 ) & 0xFF );
@@ -149,21 +151,25 @@ void RadioInit()
 #endif
     RadioSetCommand(RADIO_SET_MODULATIONPARAMS, data8, size10);
 
+    //Clear up data buffer in radio module (unnecessary, but used for debugging)
     uint8_t zero_buffer[256];
     for(int i = 0; i < 256; i++)
       zero_buffer[i] = 0;
     RadioWriteBuffer(0, zero_buffer, 255);
     osDelay(100);
 
+    //Clear interrupts
     uint8_t IRQClear[] = {0x03, 0xFF};
     RadioSetCommand(RADIO_CLR_IRQSTATUS, IRQClear, 2);
 
 #if TX
     RadioSetupTX();
+    //Debug lights
     HAL_GPIO_WritePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin, GPIO_PIN_SET);
     HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, GPIO_PIN_RESET);
 #elif RX
     RadioSetupRX();
+    //Debug lights
     HAL_GPIO_WritePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, GPIO_PIN_SET);
 #endif
@@ -190,10 +196,12 @@ void RadioSetupTX()
     RadioSetCommand(RADIO_CFG_DIOIRQ, data9, size11);
 
 #if RF_HP
+    //Relay setup for HP TX according to dev-board datasheet
     HAL_GPIO_WritePin(FE_CTRL1_GPIO_Port, FE_CTRL1_Pin, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(FE_CTRL2_GPIO_Port, FE_CTRL2_Pin, GPIO_PIN_SET);
     HAL_GPIO_WritePin(FE_CTRL3_GPIO_Port, FE_CTRL3_Pin, GPIO_PIN_SET);
 #else
+    //Relay setup for HP RX according to dev-board datasheet
     HAL_GPIO_WritePin(FE_CTRL1_GPIO_Port, FE_CTRL1_Pin, GPIO_PIN_SET);
     HAL_GPIO_WritePin(FE_CTRL2_GPIO_Port, FE_CTRL2_Pin, GPIO_PIN_SET);
     HAL_GPIO_WritePin(FE_CTRL3_GPIO_Port, FE_CTRL3_Pin, GPIO_PIN_SET);
@@ -201,12 +209,14 @@ void RadioSetupTX()
 }
 
 void RadioSendTXContinuousWave() {
-    RadioSetCommand(RADIO_SET_TXCONTINUOUSWAVE, NULL, 0); //used to debug and create a wave and output freq
+    //used to debug and create a wave and output freq
+    RadioSetCommand(RADIO_SET_TXCONTINUOUSWAVE, NULL, 0);
 }
 
 int RadioTransmit(uint8_t* data, uint8_t size)
 {
 
+    //Check if packet fits in the current TX buffer size
     if(size <= RXADDRESS - TXADDRESS)  {
       RadioWriteBuffer(TXADDRESS, data, size);
 #if LORA
@@ -220,8 +230,11 @@ int RadioTransmit(uint8_t* data, uint8_t size)
       return 0;
     }
 
-    uint8_t timeout[] = {0x00, 0x00, 0x00}; //no timeout
+    //TX oneshot with no timeout
+    uint8_t timeout[] = {0x00, 0x00, 0x00}; 
     RadioSetCommand(RADIO_SET_TX, timeout, 3);
+
+    //Add handle of failed TX (blink the blue LED if so)
 
     return 1;
 }
@@ -233,6 +246,7 @@ void RadioSetupRX()
     uint16_t size11 = 8;
     RadioSetCommand(RADIO_CFG_DIOIRQ, data9, size11);
 
+    //Relay setup for RX according to dev-board datasheet
     HAL_GPIO_WritePin(FE_CTRL1_GPIO_Port, FE_CTRL1_Pin, GPIO_PIN_SET);
     HAL_GPIO_WritePin(FE_CTRL2_GPIO_Port, FE_CTRL2_Pin, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(FE_CTRL3_GPIO_Port, FE_CTRL3_Pin, GPIO_PIN_SET);
@@ -251,27 +265,29 @@ void RadioReceive() {
     //wait for receive command from RX interrupt
     uint8_t receive;
     osMessageQueueGet(RadioReceiveInterruptQueue, &receive, 0, osWaitForever);
+
+    //Problem, if more packets are sent than we can handle, we could read the same packet over and over again
+    //since our current method uses GET_RXBUFFERSTATUS, which only gives you the newest packet
+    //probably make our method to keep track of the buffer read and interate until you get to the newest packet
+
     //clear interrupt since IRQ_CLR from handler can fail
     uint8_t IRQClear[] = {0x00, 0x02};
     RadioSetCommand(RADIO_CLR_IRQSTATUS, IRQClear, 2);
 
+    //receive newest packet length and address
     uint8_t bufferStatus[2];
     RadioGetCommand(RADIO_GET_RXBUFFERSTATUS, bufferStatus, 2);
+
+    //read newest packet from data buffer
     uint8_t data[8];
     RadioReadBuffer(bufferStatus[1], data, bufferStatus[0]);
 
-    //throw it into a queue here instead
+    //throw it into the data queue
     RadioData radioData = {0};
     radioData.size = bufferStatus[0] - 2; //minus two cause 2 of those are from ID
     memcpy(&(radioData.ID), data, 2);
     memcpy(&(radioData.data), &(data[2]), radioData.size);
     osMessageQueuePut(RadioDataQueue, &radioData, 0, 0);
-    
-    if(radioData.ID == 1 && radioData.data[0] == 1) {
-        HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_SET);
-    } else {
-        HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_RESET);
-    }
 }
 #endif
 
@@ -283,13 +299,14 @@ void RadioReceiveStats()
   uint8_t packetStatus[4];
   uint8_t stats[7];
 
-  RadioGetCommand(RADIO_GET_ERROR, error, 3);
-  RadioGetCommand(RADIO_GET_IRQSTATUS, irqStatus, 3);
   RadioGetCommand(RADIO_GET_STATUS, &status, 1);
+  RadioGetCommand(RADIO_GET_IRQSTATUS, irqStatus, 3);
+  RadioGetCommand(RADIO_GET_ERROR, error, 3);
   RadioGetCommand(RADIO_GET_PACKETSTATUS, packetStatus, 4);
   RadioGetCommand(RADIO_GET_STATS, stats, 7);
 }
 
+//main radio function, called by the radioTask
 void RadioLoop()
 {
 #if TX
