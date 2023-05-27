@@ -17,7 +17,7 @@
     uint16_t PACKETPARAMSIZE = 9;
 #endif
 
-//There must be a nicer way to have Mutexes or change SUBGHZ_Handle name be used or unused with a single macro (perhaps macro function declaration)
+//TODO: There must be a nicer way to have Mutexes or change SUBGHZ_Handle name be used or unused with a single macro (perhaps macro function declaration)
 void RadioSetCommand(SUBGHZ_RadioSetCmd_t Command, uint8_t *pBuffer, uint16_t Size) {
     //if(osMutexWait(SUBGHZMutexHandle, 0) == osOK)
     {
@@ -256,9 +256,10 @@ void RadioSetupRX()
     RadioSetCommand(RADIO_SET_RX, timeout, 3);
 }
 
+//TODO: use semaphore instead, for the future
 void HAL_SUBGHZ_RxCpltCallback(SUBGHZ_HandleTypeDef *hsubghz) {
     uint8_t messageReceived = 1;
-    osMessageQueuePut(RadioReceiveInterruptQueue, &messageReceived, 0, 0); //use semaphore instead, for the future
+    osMessageQueuePut(RadioReceiveInterruptQueue, &messageReceived, 0, 0);
 }
 
 void RadioReceive() {
@@ -266,7 +267,7 @@ void RadioReceive() {
     uint8_t receive;
     osMessageQueueGet(RadioReceiveInterruptQueue, &receive, 0, osWaitForever);
 
-    //Problem, if more packets are sent than we can handle, we could read the same packet over and over again
+    //TODO: Problem, if more packets are sent than we can handle, we could read the same packet over and over again
     //since our current method uses GET_RXBUFFERSTATUS, which only gives you the newest packet
     //probably make our method to keep track of the buffer read and interate until you get to the newest packet
 
