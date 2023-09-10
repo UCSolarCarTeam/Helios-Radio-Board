@@ -177,19 +177,19 @@ void RadioSetupTX()
     osDelay(1);
 
     // HP PA mode, HP PA max power
-    uint8_t data6[] = {0x04, 0x07, 0x00, 0x01};
-    uint16_t size8 = 4;
-    RadioSetCommand(RADIO_SET_PACONFIG, data6, size8);
+    uint8_t paConfig[] = {0x04, 0x07, 0x00, 0x01};
+    uint16_t size = 4;
+    RadioSetCommand(RADIO_SET_PACONFIG, paConfig, size);
 
     //22db power, 800 μs ramp time. not sure how ramp up time affects performance, must research
-    uint8_t data7[] = {0x16, 0x05};
-    uint16_t size9 = 2;
-    RadioSetCommand(RADIO_SET_TXPARAMS, data7, size9);
+    uint8_t txParameters[] = {0x16, 0x05};
+    size = 2;
+    RadioSetCommand(RADIO_SET_TXPARAMS, txParameters, size);
 
     //enable RX done, TX done, and RX/TX timeout interrupts on IRQ line 1 (from my understanding, an IRQ line can only halt processor once at a time)
-    uint8_t data9[] = {0x02, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}; 
-    uint16_t size11 = 8;
-    RadioSetCommand(RADIO_CFG_DIOIRQ, data9, size11);
+    uint8_t dioIRQConfig[] = {0x02, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}; 
+    size = 8;
+    RadioSetCommand(RADIO_CFG_DIOIRQ, dioIRQConfig, size);
 
 #if RF_HP
     //Relay setup for HP TX according to dev-board datasheet
@@ -238,9 +238,9 @@ int RadioTransmit(uint8_t* data, uint8_t size)
 void RadioSetupRX()
 {   
     //enable RX done, TX done, and RX/TX timeout interrupts on IRQ line 1 (from my understanding, an IRQ line can only halt processor once at a time)
-    uint8_t data9[] = {0x02, 0x02, 0x02, 0x02, 0x00, 0x00, 0x00, 0x00};
-    uint16_t size11 = 8;
-    RadioSetCommand(RADIO_CFG_DIOIRQ, data9, size11);
+    uint8_t dioIRQConfig[] = {0x02, 0x02, 0x02, 0x02, 0x00, 0x00, 0x00, 0x00};
+    uint16_t size = 8;
+    RadioSetCommand(RADIO_CFG_DIOIRQ, dioIRQConfig, size);
 
     //Relay setup for RX according to dev-board datasheet
     HAL_GPIO_WritePin(FE_CTRL1_GPIO_Port, FE_CTRL1_Pin, GPIO_PIN_SET);
