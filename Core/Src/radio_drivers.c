@@ -2,7 +2,7 @@
  * radio_drivers.c
  *
  *  Created on: Feb. 28, 2023
- *      Author: marcelo
+ *      Author: Marcelo
  */
 
 #include "radio_drivers.h"
@@ -12,7 +12,7 @@
     uint8_t PACKETPARAMS[] = {0x00, 0x0C, 0x00, 0x08, 0x00, 0x00};
     uint16_t PACKETPARAMSIZE = 6;
 #elif FSK
-    //12 preamble symbols, preamble detection disabled, 8 bit sync word,addres comparison/filtering disabled, fixed payload, payload_length (overwritten), CRC diabled, whitening disabled
+    //12 preamble symbols, preamble detection disabled, 8 bit sync word,addres comparison/filtering disabled, fixed payload, payload_length (overwritten), CRC disabled, whitening disabled
     uint8_t PACKETPARAMS[] = {0x00, 0x0C, 0x00, 0x08, 0x00, 0x00, 0x02, 0x00, 0x00};
     uint16_t PACKETPARAMSIZE = 9;
 #endif
@@ -80,76 +80,72 @@ void RadioInit()
     osDelay(1);
 
     //enable SMPS clock detection, to use external TCXO
-    uint8_t payload0[] = {SMPS_CLK_DET_ENABLE};
-    uint16_t address0 = SUBGHZ_SMPSC0R;
-    uint16_t size0 = 1;
-    RadioWriteRegisters(address0, payload0, size0);
+    uint8_t SMPSC0R[] = {SMPS_CLK_DET_ENABLE};
+    uint16_t address = SUBGHZ_SMPSC0R;
+    uint16_t size = 1;
+    RadioWriteRegisters(SUBGHZ_SMPSC0R, SMPSC0R, size);
 
     //SMPS mode used
     uint8_t regulator_mode[] = {0x01};
-    RadioSetCommand(RADIO_SET_REGULATORMODE, regulator_mode, 1);
+    RadioSetCommand(RADIO_SET_REGULATORMODE, regulator_mode, size);
 
     //set standby with RC13 clock
-    uint8_t data1[] = {0x00};
-    uint16_t size1 = 1;
-    RadioSetCommand(RADIO_SET_STANDBY, data1, size1);
+    uint8_t standbyCfg[] = {0x00};
+    RadioSetCommand(RADIO_SET_STANDBY, standbyCfg, size);
 
     //set address for relevant buffers
-    uint8_t data2[] = {TXADDRESS, RXADDRESS};
-    uint16_t size2 = 2;
-    RadioSetCommand(RADIO_SET_BUFFERBASEADDRESS, data2, size2);
+    uint8_t bufferBaseAddress[] = {TXADDRESS, RXADDRESS};
+    size = 2;
+    RadioSetCommand(RADIO_SET_BUFFERBASEADDRESS, bufferBaseAddress, size);
 
 
 #if LORA
     //LORA packet type
-    uint8_t data3[] = {0x01};
+    uint8_t packetType[] = {0x01};
 #elif FSK
     //FSK packet type
-    uint8_t data3[] = {0x00};
+    uint8_t packetType[] = {0x00};
 #endif
-    uint16_t size4 = 1;
-    RadioSetCommand(RADIO_SET_PACKETTYPE, data3, size4);
+    size = 1;
+    RadioSetCommand(RADIO_SET_PACKETTYPE, packetType, size);
 
     RadioSetCommand(RADIO_SET_PACKETPARAMS, PACKETPARAMS, PACKETPARAMSIZE);
 
 #if LORA
     //sync conf, not sure what these are so all disabled
-    uint8_t SUBGHZ_GBSYNCR[] = {0x00};
-    uint16_t SUBGHZ_GBSYNCR_ADDRESS = 0x6AC;
-    uint16_t SUBGHZ_GBSYNCR_SIZE = 1;
-    RadioWriteRegisters(SUBGHZ_GBSYNCR_ADDRESS, SUBGHZ_GBSYNCR, SUBGHZ_GBSYNCR_SIZE);
+    uint8_t GBSYNCR[] = {0x00};
+    address = 0x6AC;
+    RadioWriteRegisters(address, GBSYNCR, size);
 
     //sync words (must the same on receiver and transmitter)
-    uint8_t SUBGHZ_LSYNCRH[] = {0xA5};
-    uint16_t SUBGHZ_LSYNCRH_ADDRESS = 0x740;
-    uint16_t SUBGHZ_LSYNCRH_SIZE = 1;
-    RadioWriteRegisters(SUBGHZ_LSYNCRH_ADDRESS, SUBGHZ_LSYNCRH, SUBGHZ_LSYNCRH_SIZE);
+    uint8_t LSYNCRH[] = {0xA5};
+    address = 0x740;
+    RadioWriteRegisters(address, LSYNCRH, size);
 
-    uint8_t SUBGHZ_LSYNCRL[] = {0xA5};
-    uint16_t SUBGHZ_LSYNCRL_ADDRESS = 0x741;
-    uint16_t SUBGHZ_LSYNCRL_SIZE = 1;
-    RadioWriteRegisters(SUBGHZ_LSYNCRL_ADDRESS, SUBGHZ_LSYNCRL, SUBGHZ_LSYNCRL_SIZE);
+    LSYNCRL[] = {0xA5};
+    address = 0x741;
+    RadioWriteRegisters(address, LSYNCRL, size);
 #endif
 
     //used to set frequency, copied from stm32wl code package
     uint32_t channel = (uint32_t) ((((uint64_t) RADIO_FREQUENCY)<<25)/(XTAL_FREQ) );
-    uint8_t data5[4];
-    data5[0] = ( uint8_t )( ( channel >> 24 ) & 0xFF );
-    data5[1] = ( uint8_t )( ( channel >> 16 ) & 0xFF );
-    data5[2] = ( uint8_t )( ( channel >> 8 ) & 0xFF );
-    data5[3] = ( uint8_t )( channel & 0xFF );
-    uint16_t size7 = 4;
-    RadioSetCommand(RADIO_SET_RFFREQUENCY, data5, size7);
+    uint8_t RFfreq[4];
+    RFfreq[0] = ( uint8_t )( ( channel >> 24 ) & 0xFF );
+    RFfreq[1] = ( uint8_t )( ( channel >> 16 ) & 0xFF );
+    RFfreq[2] = ( uint8_t )( ( channel >> 8 ) & 0xFF );
+    RFfreq[3] = ( uint8_t )( channel & 0xFF );
+    size = 4;
+    RadioSetCommand(RADIO_SET_RFFREQUENCY, RFfreq, size);
 
 #if LORA
     //SF of 8, BW of 62.5, CR 4/5
-    uint8_t data8[] = {0x08, 0x03, 0x01, 0x00};
-    uint16_t size10 = 4;
+    uint8_t modulationParamaters[] = {0x08, 0x03, 0x01, 0x00};
+    size = 4;
 #elif FSK
     uint8_t data8[] = {0x01, 0x90, 0x00, 0x00, 0x0B, 0x00, 0x00, 0xD2};
     uint16_t size10 = 8;
 #endif
-    RadioSetCommand(RADIO_SET_MODULATIONPARAMS, data8, size10);
+    RadioSetCommand(RADIO_SET_MODULATIONPARAMS, modulationParamaters, size);
 
     //Clear up data buffer in radio module (unnecessary, but used for debugging)
     uint8_t zero_buffer[256];

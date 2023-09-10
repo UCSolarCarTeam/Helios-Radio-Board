@@ -2,7 +2,7 @@
  * radio_drivers.h
  *
  *  Created on: Feb. 28, 2023
- *      Author: marce
+ *      Author: Marcelo
  */
 #pragma once
 
@@ -33,6 +33,32 @@
 
 #define RADIO_RECEIVE_INTERRUPT_QUEUE_COUNT 16
 #define RADIO_DATA_QUEUE_COUNT 16
+
+typedef struct RadioConfig {
+    uint8_t preambleSymbols;
+    uint8_t payloadLength;
+#if LORA
+    uint8_t headerType;
+    uint8_t CRCenable;
+    uint8_t invertIQ;
+    uint8_t spreadingFactor;
+    uint8_t bandwith;
+    uint8_t cr;
+    uint8_t lowDataRateOptimizationEnable;
+#elif FSK
+    uint8_t preambleDetection;
+    uint8_t syncWordLength;
+    uint8_t addressComparison;
+    uint8_t packetType;
+    uint8_t CRC;
+    uint8_t whitening;
+#endif
+    uint8_t frequency;
+    uint8_t SMPS;
+    uint8_t regulatorMode;
+    uint8_t TXaddress;
+    uint8_t RXaddress;
+} RadioConfig;
 
 typedef struct RadioData {
     uint16_t ID;
