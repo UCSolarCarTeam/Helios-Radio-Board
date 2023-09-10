@@ -35,16 +35,20 @@
 #define RADIO_DATA_QUEUE_COUNT 16
 
 typedef struct RadioConfig {
+    //Packet parameters command
     uint8_t preambleSymbols;
     uint8_t payloadLength;
 #if LORA
     uint8_t headerType;
     uint8_t CRCenable;
     uint8_t invertIQ;
+
+    //Modulation parameters command
     uint8_t spreadingFactor;
     uint8_t bandwith;
     uint8_t cr;
-    uint8_t lowDataRateOptimizationEnable;
+    uint8_t ldrOptimization;
+
 #elif FSK
     uint8_t preambleDetection;
     uint8_t syncWordLength;
@@ -53,12 +57,58 @@ typedef struct RadioConfig {
     uint8_t CRC;
     uint8_t whitening;
 #endif
+    //Frequency command
     uint8_t frequency;
-    uint8_t SMPS;
+
+    //SMPS register value
+    uint8_t SMPSEenable;
+
+    //Regulator Mode command
     uint8_t regulatorMode;
+
+    //buffer address command
     uint8_t TXaddress;
     uint8_t RXaddress;
+
+    //Tx Parameters command
+    uint8_t power;
+    uint8_t rampTime;
+
+    //Pa Config command
+    uint8_t paDutyCycle;
+    uint8_t hpMax;
+    uint8_t paSel;
+
+    //synchronization config
+    uint8_t gbsyncr;
+    uint8_t lsyncrH;
+    uint8_t lsyncrL;
+
 } RadioConfig;
+
+RadioConfig radioConfig = { .preambleSymbols = 0xC,
+                            .payloadLength = 0,
+                            .headerType = 0,
+                            .CRCenable = 0,
+                            .invertIQ = 0,
+                            .spreadingFactor = 8,
+                            .bandwith = 3,
+                            .cr = 1,
+                            .ldrOptimization = 0,
+                            .frequency = 915000000,
+                            .SMPSEenable = 0x40, //register value
+                            .regulatorMode = 1,
+                            .TXaddress = 0,
+                            .RXaddress = 8,
+                            .power = 0x16,
+                            .rampTime = 0x05,
+                            .paDutyCycle = 0x04,
+                            .hpMax = 0x07,
+                            .paSel = 0,
+                            .gbsyncr = 0,   //register value
+                            .lsyncrH = 0xA5, //register value
+                            .lsyncrL = 0xA5 //register value
+                            }
 
 typedef struct RadioData {
     uint16_t ID;

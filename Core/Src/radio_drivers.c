@@ -7,16 +7,6 @@
 
 #include "radio_drivers.h"
 
-#if LORA
-    // 12 preamble symbols, explicit header (variable size), size (overwritten), CRC disabled, standard IQ setup (no idea)
-    uint8_t PACKETPARAMS[] = {0x00, 0x0C, 0x00, 0x08, 0x00, 0x00};
-    uint16_t PACKETPARAMSIZE = 6;
-#elif FSK
-    //12 preamble symbols, preamble detection disabled, 8 bit sync word,addres comparison/filtering disabled, fixed payload, payload_length (overwritten), CRC disabled, whitening disabled
-    uint8_t PACKETPARAMS[] = {0x00, 0x0C, 0x00, 0x08, 0x00, 0x00, 0x02, 0x00, 0x00};
-    uint16_t PACKETPARAMSIZE = 9;
-#endif
-
 //TODO: There must be a nicer way to have Mutexes or change SUBGHZ_Handle name be used or unused with a single macro (perhaps macro function declaration)
 void RadioSetCommand(SUBGHZ_RadioSetCmd_t Command, uint8_t *pBuffer, uint16_t Size) {
     //if(osMutexWait(SUBGHZMutexHandle, 0) == osOK)
@@ -80,13 +70,13 @@ void RadioInit()
     osDelay(1);
 
     //enable SMPS clock detection, to use external TCXO
-    uint8_t SMPSC0R[] = {SMPS_CLK_DET_ENABLE};
+    uint8_t SMPSC0R[] = {radioConfig.SMPSEenable};
     uint16_t address = SUBGHZ_SMPSC0R;
     uint16_t size = 1;
     RadioWriteRegisters(SUBGHZ_SMPSC0R, SMPSC0R, size);
 
     //SMPS mode used
-    uint8_t regulator_mode[] = {0x01};
+    uint8_t regulator_mode[] = {radioConfig.regulatorMode};
     RadioSetCommand(RADIO_SET_REGULATORMODE, regulator_mode, size);
 
     //set standby with RC13 clock
@@ -94,7 +84,7 @@ void RadioInit()
     RadioSetCommand(RADIO_SET_STANDBY, standbyCfg, size);
 
     //set address for relevant buffers
-    uint8_t bufferBaseAddress[] = {TXADDRESS, RXADDRESS};
+    uint8_t bufferBaseAddress[] = {radioConfig.TXaddress, radioConfig.RXaddress};
     size = 2;
     RadioSetCommand(RADIO_SET_BUFFERBASEADDRESS, bufferBaseAddress, size);
 
@@ -109,26 +99,35 @@ void RadioInit()
     size = 1;
     RadioSetCommand(RADIO_SET_PACKETTYPE, packetType, size);
 
-    RadioSetCommand(RADIO_SET_PACKETPARAMS, PACKETPARAMS, PACKETPARAMSIZE);
+#if LORA
+    // 12 preamble symbols, explicit header (variable size), size (overwritten), CRC disabled, standard IQ setup (no idea)
+    uint8_t packetParameters[] = {radioConfig.preambleSymbols >> 8, radioConfig.preambleSymbols & 0xFF, radioConfig.payloadLength, radioConfig.headerType, radioConfig.CRCenable, radioConfig.invertIQ};
+    size = 6;
+#elif FSK
+    //12 preamble symbols, preamble detection disabled, 8 bit sync word,addres comparison/filtering disabled, fixed payload, payload_length (overwritten), CRC disabled, whitening disabled
+    uint8_t packetParameters[] = {0x00, 0x0C, 0x00, 0x08, 0x00, 0x00, 0x02, 0x00, 0x00};
+    size = 9;
+#endif
+    RadioSetCommand(RADIO_SET_PACKETPARAMS, packetParameters, size);
 
 #if LORA
     //sync conf, not sure what these are so all disabled
-    uint8_t GBSYNCR[] = {0x00};
+    uint8_t GBSYNCR[] = {radioConfig.gbsyncr};
     address = 0x6AC;
     RadioWriteRegisters(address, GBSYNCR, size);
 
     //sync words (must the same on receiver and transmitter)
-    uint8_t LSYNCRH[] = {0xA5};
+    uint8_t LSYNCRH[] = {radioConfig.lsyncrH};
     address = 0x740;
     RadioWriteRegisters(address, LSYNCRH, size);
 
-    LSYNCRL[] = {0xA5};
+    uint8_t LSYNCRL[] = {radioConfig.lsyncrL};
     address = 0x741;
     RadioWriteRegisters(address, LSYNCRL, size);
 #endif
 
     //used to set frequency, copied from stm32wl code package
-    uint32_t channel = (uint32_t) ((((uint64_t) RADIO_FREQUENCY)<<25)/(XTAL_FREQ) );
+    uint32_t channel = (uint32_t) ((((uint64_t) radioConfig.frequency)<<25)/(XTAL_FREQ) );
     uint8_t RFfreq[4];
     RFfreq[0] = ( uint8_t )( ( channel >> 24 ) & 0xFF );
     RFfreq[1] = ( uint8_t )( ( channel >> 16 ) & 0xFF );
@@ -139,7 +138,7 @@ void RadioInit()
 
 #if LORA
     //SF of 8, BW of 62.5, CR 4/5
-    uint8_t modulationParamaters[] = {0x08, 0x03, 0x01, 0x00};
+    uint8_t modulationParamaters[] = {radioConfig.spreadingFactor, radioConfig.bandwith, radioConfig.cr, radioConfig.ldrOptimization};
     size = 4;
 #elif FSK
     uint8_t data8[] = {0x01, 0x90, 0x00, 0x00, 0x0B, 0x00, 0x00, 0xD2};
@@ -176,13 +175,13 @@ void RadioSetupTX()
 {
     osDelay(1);
 
-    // HP PA mode, HP PA max power
-    uint8_t paConfig[] = {0x04, 0x07, 0x00, 0x01};
+    // HP PA mode, HP PA max power, last byte must be 0x01 according to datasheet
+    uint8_t paConfig[] = {radioConfig.paDutyCycle, radioConfig.hpMax, radioConfig.paSel, 0x01};
     uint16_t size = 4;
     RadioSetCommand(RADIO_SET_PACONFIG, paConfig, size);
 
     //22db power, 800 μs ramp time. not sure how ramp up time affects performance, must research
-    uint8_t txParameters[] = {0x16, 0x05};
+    uint8_t txParameters[] = {radioConfig.power, radioConfig.rampTime};
     size = 2;
     RadioSetCommand(RADIO_SET_TXPARAMS, txParameters, size);
 
@@ -213,8 +212,8 @@ int RadioTransmit(uint8_t* data, uint8_t size)
 {
 
     //Check if packet fits in the current TX buffer size
-    if(size <= RXADDRESS - TXADDRESS)  {
-      RadioWriteBuffer(TXADDRESS, data, size);
+    if(size <= radioConfig.RXaddress - radioConfig.TXaddress)  {
+      RadioWriteBuffer(radioConfig.TXaddress, data, size);
 #if LORA
       PACKETPARAMS[3] = size;
 #elif FSK
