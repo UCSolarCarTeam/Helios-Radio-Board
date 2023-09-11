@@ -117,4 +117,4 @@ void RadioReceiveStats();
 void RadioLoop();
 void RadioTask(void *argument);
 
-#endif /*RADIO_DRIVERS_H*/
+#endif /* RADIO_DRIVERS_H */

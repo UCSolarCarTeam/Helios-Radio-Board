@@ -74,6 +74,7 @@ void Error_Handler(void);
 #define B2_GPIO_Port GPIOA
 #define RED_LED_Pin GPIO_PIN_11
 #define RED_LED_GPIO_Port GPIOB
+
 /* USER CODE BEGIN Private defines */
 /* USER CODE END Private defines */
 

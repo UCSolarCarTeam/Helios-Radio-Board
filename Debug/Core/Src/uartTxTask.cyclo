@@ -1,0 +1,2 @@
+../Core/Src/uartTxTask.c:3:6:HAL_UART_RxCpltCallback	1
+../Core/Src/uartTxTask.c:12:6:uartTxTask	1
