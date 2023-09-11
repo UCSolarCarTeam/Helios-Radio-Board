@@ -4,7 +4,8 @@
  *  Created on: Feb. 28, 2023
  *      Author: Marcelo
  */
-#pragma once
+#ifndef RADIO_DRIVERS_H
+#define RADIO_DRIVERS_H
 
 #include <stdint.h>
 #include <string.h>
@@ -58,7 +59,7 @@ typedef struct RadioConfig {
     uint8_t whitening;
 #endif
     //Frequency command
-    uint8_t frequency;
+    uint32_t frequency;
 
     //SMPS register value
     uint8_t SMPSEenable;
@@ -85,30 +86,6 @@ typedef struct RadioConfig {
     uint8_t lsyncrL;
 
 } RadioConfig;
-
-RadioConfig radioConfig = { .preambleSymbols = 0xC,
-                            .payloadLength = 0,
-                            .headerType = 0,
-                            .CRCenable = 0,
-                            .invertIQ = 0,
-                            .spreadingFactor = 8,
-                            .bandwith = 3,
-                            .cr = 1,
-                            .ldrOptimization = 0,
-                            .frequency = 915000000,
-                            .SMPSEenable = 0x40, //register value
-                            .regulatorMode = 1,
-                            .TXaddress = 0,
-                            .RXaddress = 8,
-                            .power = 0x16,
-                            .rampTime = 0x05,
-                            .paDutyCycle = 0x04,
-                            .hpMax = 0x07,
-                            .paSel = 0,
-                            .gbsyncr = 0,   //register value
-                            .lsyncrH = 0xA5, //register value
-                            .lsyncrL = 0xA5 //register value
-                            }
 
 typedef struct RadioData {
     uint16_t ID;
@@ -139,3 +116,5 @@ int RadioTransmit(uint8_t* data, uint8_t size);
 void RadioReceiveStats();
 void RadioLoop();
 void RadioTask(void *argument);
+
+#endif /*RADIO_DRIVERS_H*/

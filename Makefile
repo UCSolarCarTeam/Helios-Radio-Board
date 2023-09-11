@@ -59,6 +59,7 @@ Drivers/STM32WLxx_HAL_Driver/Src/stm32wlxx_hal_tim.c \
 Drivers/STM32WLxx_HAL_Driver/Src/stm32wlxx_hal_tim_ex.c \
 Drivers/STM32WLxx_HAL_Driver/Src/stm32wlxx_hal_uart.c \
 Drivers/STM32WLxx_HAL_Driver/Src/stm32wlxx_hal_uart_ex.c \
+Drivers/CMSIS/DSP/DSP_Lib_testSuite/Common/platform/GCC/Retarget.c \
 Core/Src/system_stm32wlxx.c \
 Middlewares/Third_Party/FreeRTOS/Source/croutine.c \
 Middlewares/Third_Party/FreeRTOS/Source/event_groups.c \
@@ -70,11 +71,6 @@ Middlewares/Third_Party/FreeRTOS/Source/timers.c \
 Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.c \
 Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_4.c \
 Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM3/port.c
-#Utilities/misc/stm32_mem.c \
-#Utilities/misc/stm32_mem.c \#Utilities/misc/stm32_mem.c \#Utilities/misc/stm32_mem.c \#Utilities/misc/stm32_mem.c \#Utilities/misc/stm32_mem.c \#Utilities/misc/stm32_mem.c \#Utilities/misc/stm32_mem.c \#Utilities/misc/stm32_mem.c \#Drivers/BSP/STM32WLxx_Nucleo/stm32wlxx_nucleo_radio.c \
-#Drivers/BSP/STM32WLxx_Nucleo/stm32wlxx_nucleo.c \
-#Drivers/Radio/radio_board_if.c \
-#Drivers/Radio/radio_driver.c
 
 # ASM sources
 ASM_SOURCES =  \

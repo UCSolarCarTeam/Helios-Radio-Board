@@ -7,6 +7,30 @@
 
 #include "radio_drivers.h"
 
+RadioConfig radioConfig = { .preambleSymbols = 0xC,
+                            .payloadLength = 0,
+                            .headerType = 0,
+                            .CRCenable = 0,
+                            .invertIQ = 0,
+                            .spreadingFactor = 8,
+                            .bandwith = 3,
+                            .cr = 1,
+                            .ldrOptimization = 0,
+                            .frequency = 915000000,
+                            .SMPSEenable = 0x40, //register value
+                            .regulatorMode = 1,
+                            .TXaddress = 0,
+                            .RXaddress = 8,
+                            .power = 0x16,
+                            .rampTime = 0x05,
+                            .paDutyCycle = 0x04,
+                            .hpMax = 0x07,
+                            .paSel = 0,
+                            .gbsyncr = 0,   //register value
+                            .lsyncrH = 0xA5, //register value
+                            .lsyncrL = 0xA5 //register value
+                            };
+
 //TODO: There must be a nicer way to have Mutexes or change SUBGHZ_Handle name be used or unused with a single macro (perhaps macro function declaration)
 void RadioSetCommand(SUBGHZ_RadioSetCmd_t Command, uint8_t *pBuffer, uint16_t Size) {
     //if(osMutexWait(SUBGHZMutexHandle, 0) == osOK)
@@ -210,16 +234,19 @@ void RadioSendTXContinuousWave() {
 
 int RadioTransmit(uint8_t* data, uint8_t size)
 {
-
     //Check if packet fits in the current TX buffer size
     if(size <= radioConfig.RXaddress - radioConfig.TXaddress)  {
       RadioWriteBuffer(radioConfig.TXaddress, data, size);
 #if LORA
-      PACKETPARAMS[3] = size;
+    // 12 preamble symbols, explicit header (variable size), size (overwritten), CRC disabled, standard IQ setup (no idea)
+    uint8_t packetParameters[] = {radioConfig.preambleSymbols >> 8, radioConfig.preambleSymbols & 0xFF, size, radioConfig.headerType, radioConfig.CRCenable, radioConfig.invertIQ};
+    uint8_t commandSize = 6;
 #elif FSK
-      PACKETPARAMS[6] = size;
+    //12 preamble symbols, preamble detection disabled, 8 bit sync word,addres comparison/filtering disabled, fixed payload, payload_length (overwritten), CRC disabled, whitening disabled
+    uint8_t packetParameters[] = {0x00, 0x0C, 0x00, 0x08, 0x00, 0x00, 0x02, 0x00, 0x00};
+    uint8_t commandSize = 9;
 #endif
-      RadioSetCommand(RADIO_SET_PACKETPARAMS, PACKETPARAMS, PACKETPARAMSIZE);
+      RadioSetCommand(RADIO_SET_PACKETPARAMS, packetParameters, commandSize);
     }
     else {
       return 0;

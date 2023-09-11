@@ -23,6 +23,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "radio_drivers.h"
+#include "system_defines.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -88,7 +89,7 @@ static void MX_USART2_UART_Init(void);
 void StartDefaultTask(void *argument);
 
 /* USER CODE BEGIN PFP */
-
+void ToggleTask(void *argument);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
