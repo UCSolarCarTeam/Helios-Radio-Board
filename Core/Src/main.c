@@ -75,6 +75,7 @@ const osMutexAttr_t SUBGHZMutex_attributes = {
 };
 
 osMessageQueueId_t uartRxQueue;
+osMessageQueueId_t uartTxQueue;
 osMessageQueueId_t RadioDataQueue;
 #if RX
 osMessageQueueId_t RadioReceiveInterruptQueue;
@@ -147,7 +148,8 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_QUEUES */
   RadioDataQueue = osMessageQueueNew(RADIO_DATA_QUEUE_COUNT, sizeof(struct RadioData), NULL);
-  uartRxQueue = osMessageQueueNew(UART_RX_DATA_QUEUE_COUNT, UART_RX_DATA_SIZE, NULL);
+  uartRxQueue = osMessageQueueNew(UART_RX_DATA_QUEUE_COUNT, sizeof(uartData), NULL);
+  uartTxQueue = osMessageQueueNew(UART_TX_DATA_QUEUE_COUNT, UART_TX_DATA_SIZE, NULL);
 #if RX
   RadioReceiveInterruptQueue = osMessageQueueNew(RADIO_RECEIVE_INTERRUPT_QUEUE_COUNT, sizeof(uint8_t), NULL);
 #endif

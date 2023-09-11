@@ -137,10 +137,6 @@ C_INCLUDES =  \
 -IMiddlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM3 \
 -IDrivers/CMSIS/Device/ST/STM32WLxx/Include \
 -IDrivers/CMSIS/Include
-#-IUtilities/conf \
-#-IUtilities/conf \#-IUtilities/conf \#-IUtilities/conf \#-IUtilities/conf \#-IUtilities/conf \#-IUtilities/conf \#-IUtilities/conf \#-IUtilities/conf \#-IUtilities/misc \
-#-IDrivers/BSP/STM32WLxx_Nucleo \
-#-IDrivers/Radio
 
 
 # compile gcc flags
