@@ -310,10 +310,11 @@ void RadioReceive() {
     radioData.size = bufferStatus[0] - 2; //minus two cause 2 of those are from ID
     memcpy(&(radioData.ID), data, 2);
     memcpy(&(radioData.data), &(data[2]), radioData.size);
-    osMessageQueuePut(RadioDataQueue, &radioData, 0, 0);
+    osMessageQueuePut(radioDataQueue, &radioData, 0, 0);
 }
 #endif
 
+//obtain radio stats
 void RadioReceiveStats() 
 {
   uint8_t status;
@@ -329,13 +330,40 @@ void RadioReceiveStats()
   RadioGetCommand(RADIO_GET_STATS, stats, 7);
 }
 
+void handleCommand(RadioCommand radioCommand){
+    switch(radioCommand.command){
+        case SET_COMMAND:
+            RadioSetCommand(radioCommand.address, radioCommand.data, radioCommand.size);
+            break;
+        case GET_COMMAND:
+            uint8_t command_readback[10];
+            RadioGetCommand(radioCommand.address, command_readback, radioCommand.size);
+            break;
+        case WRITE_BUFFER:
+            RadioWriteBuffer(radioCommand.address, radioCommand.data, radioCommand.size);
+            break;
+        case READ_BUFFER:
+            RadioReadBuffer(radioCommand.address, radioCommand.data, radioCommand.size);
+            break;
+        case WRITE_REGISTER_COMMAND:
+            RadioWriteRegister(radioCommand.address, *radioCommand.data);
+            break;
+        case READ_REGISTER_COMMAND:
+            uint8_t register_readback;
+            RadioReadRegister(radioCommand.address, &register_readback);
+            break;
+        default:
+            
+    }
+}
+
 //main radio function, called by the radioTask
 void RadioLoop()
 {
 #if TX
     RadioData radioData = {0};
 
-    osMessageQueueGet(RadioDataQueue, &radioData, NULL, 0);
+    osMessageQueueGet(radioDataQueue, &radioData, NULL, 0);
 
     uint8_t data[10];
     memcpy(data, &(radioData.ID), 2);

@@ -74,9 +74,15 @@ const osMutexAttr_t SUBGHZMutex_attributes = {
   .name = "SUBGHZMutex"
 };
 
-osMessageQueueId_t uartRxQueue;
+/* Definitions for VA_LIST mutex */
+osMutexId_t vaListMutexHandle;
+const osMutexAttr_t vaListMutex_attributes = {
+  .name = "vaListMutexHandle"
+};
+
+osMessageQueueId_t radioCommandQueue;
 osMessageQueueId_t uartTxQueue;
-osMessageQueueId_t RadioDataQueue;
+osMessageQueueId_t radioDataQueue;
 #if RX
 osMessageQueueId_t RadioReceiveInterruptQueue;
 #endif
@@ -137,6 +143,7 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_MUTEX */
   //SUBGHZMutexHandle = osMutexNew(&SUBGHZMutex_attributes); //unused
+  vaListMutexHandle = osMutexNew(&vaListMutex_attributes);
   /* USER CODE END RTOS_MUTEX */
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
@@ -147,9 +154,9 @@ int main(void)
   /* USER CODE END RTOS_TIMERS */
 
   /* USER CODE BEGIN RTOS_QUEUES */
-  RadioDataQueue = osMessageQueueNew(RADIO_DATA_QUEUE_COUNT, sizeof(struct RadioData), NULL);
-  uartRxQueue = osMessageQueueNew(UART_RX_DATA_QUEUE_COUNT, sizeof(uartData), NULL);
-  uartTxQueue = osMessageQueueNew(UART_TX_DATA_QUEUE_COUNT, UART_TX_DATA_SIZE, NULL);
+  radioDataQueue = osMessageQueueNew(RADIO_DATA_QUEUE_COUNT, sizeof(RadioData), NULL);
+  radioCommandQueue = osMessageQueueNew(UART_RX_DATA_QUEUE_COUNT, sizeof(RadioCommand), NULL);
+  uartTxQueue = osMessageQueueNew(UART_TX_DATA_QUEUE_COUNT, sizeof(UartTxData), NULL);
 #if RX
   RadioReceiveInterruptQueue = osMessageQueueNew(RADIO_RECEIVE_INTERRUPT_QUEUE_COUNT, sizeof(uint8_t), NULL);
 #endif
@@ -386,10 +393,10 @@ void ToggleTask(void *argument)
         radioData.data[0] = 0;
     }
     radioData.size = 1;
-    osMessageQueuePut(RadioDataQueue, &radioData, 0, 0);
+    osMessageQueuePut(radioDataQueue, &radioData, 0, 0);
     osDelay(5);
 #elif RX
-    osMessageQueueGet(RadioDataQueue, &radioData, NULL, 0);
+    osMessageQueueGet(radioDataQueue, &radioData, NULL, 0);
     if(radioData.ID == 1 && radioData.data[0] == 1) {
         HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_SET);
     } else {
@@ -424,10 +431,10 @@ void StartDefaultTask(void *argument)
         radioData.data[0] = 0;
     }
     radioData.size = 1;
-    osMessageQueuePut(RadioDataQueue, &radioData, 0, 0);
+    osMessageQueuePut(radioDataQueue, &radioData, 0, 0);
     osDelay(5);
 #elif RX
-    osMessageQueueGet(RadioDataQueue, &radioData, NULL, 0);
+    osMessageQueueGet(radioDataQueue, &radioData, NULL, 0);
     if(radioData.ID == 1 && radioData.data[0] == 1) {
         HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_SET);
     } else {

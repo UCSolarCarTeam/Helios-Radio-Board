@@ -13,6 +13,7 @@
 #include "cmsis_os2.h"
 #include "stm32wlxx_hal.h"
 #include "stm32wlxx_hal_subghz.h"
+#include "system_defines.h"
 
 #define SMPS_CLK_DET_ENABLE ((uint8_t) (1<<6))
 #define SUBGHZ_SMPSC0R      0x0916
@@ -95,7 +96,7 @@ typedef struct RadioData {
 
 extern SUBGHZ_HandleTypeDef hsubghz;
 extern osMutexId_t SUBGHZMutexHandle; //Mutex for radio_SPI, unused
-extern osMessageQueueId_t RadioDataQueue; //acts as a middle man, if in TX mode, it sends data to radioTransmit, if in RX mode, its used to receive data from RadioReceive
+extern osMessageQueueId_t radioDataQueue; //acts as a middle man, if in TX mode, it sends data to radioTransmit, if in RX mode, its used to receive data from RadioReceive
 extern osMessageQueueId_t RadioReceiveInterruptQueue; //actsa semaphore to tell the receive task when to read from the RX buffer
 
 //wrappers to use radio spi mutex
