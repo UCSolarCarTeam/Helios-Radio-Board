@@ -386,14 +386,16 @@ void ToggleTask(void *argument)
   for(;;)
   {
 #if TX
-    radioData.ID = 1;
+    RadioCommand radioCommand = {.command = TRANSMIT, .size = 3};
+    radioCommand.data = solarMalloc(3);
+    uint16_t ID = 1;
+    memcpy(radioCommand.data, &ID, 2);
     if(HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin)) {
-        radioData.data[0] = 1;
+        radioCommand.data[3] = 1;
     } else {
-        radioData.data[0] = 0;
+        radioCommand.data[3] = 0;
     }
-    radioData.size = 1;
-    osMessageQueuePut(radioDataQueue, &radioData, 0, 0);
+    osMessagePut(radioCommandQueue, &radioCommand, 0,0);
     osDelay(5);
 #elif RX
     osMessageQueueGet(radioDataQueue, &radioData, NULL, 0);
@@ -423,7 +425,7 @@ void StartDefaultTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    
+
   }
   /* USER CODE END 5 */
 }
