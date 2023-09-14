@@ -345,15 +345,17 @@ void handleCommand(RadioCommand radioCommand){
         case READ_BUFFER:
             RadioReadBuffer(radioCommand.address, radioCommand.data, radioCommand.size);
             break;
-        case WRITE_REGISTER_COMMAND:
+        case WRITE_REGISTER:
             RadioWriteRegister(radioCommand.address, *radioCommand.data);
             break;
-        case READ_REGISTER_COMMAND:
+        case READ_REGISTER:
             uint8_t register_readback;
             RadioReadRegister(radioCommand.address, &register_readback);
             break;
+        case TRANSMIT:
+            RadioTransmit(radioCommand.data, (uint8_t)radioCommand.size);
         default:
-            
+            solarPrint("invalid Radio Command");
     }
 }
 

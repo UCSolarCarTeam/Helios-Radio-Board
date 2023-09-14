@@ -423,24 +423,7 @@ void StartDefaultTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-#if TX
-    radioData.ID = 1;
-    if(HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin)) {
-        radioData.data[0] = 1;
-    } else {
-        radioData.data[0] = 0;
-    }
-    radioData.size = 1;
-    osMessageQueuePut(radioDataQueue, &radioData, 0, 0);
-    osDelay(5);
-#elif RX
-    osMessageQueueGet(radioDataQueue, &radioData, NULL, 0);
-    if(radioData.ID == 1 && radioData.data[0] == 1) {
-        HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_SET);
-    } else {
-        HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_RESET);
-    }
-#endif
+    
   }
   /* USER CODE END 5 */
 }
