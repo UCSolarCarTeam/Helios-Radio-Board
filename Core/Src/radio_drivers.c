@@ -89,6 +89,13 @@ void RadioReadRegister(uint16_t Address, uint8_t *pValue) {
     }
 }
 
+//Send radio to deep sleep, erases all configuration registers
+void RadioDeinit() 
+{
+    uint8_t data = 0x00;
+    RadioSetCommand(RADIO_SET_SLEEP, &data, 0);
+}
+
 void RadioInit() 
 {
     osDelay(1);
@@ -355,6 +362,17 @@ void radioHandleCommand(RadioCommand radioCommand)
             break;
         case TRANSMIT:
             RadioTransmit(radioCommand.data, (uint8_t)radioCommand.size);
+            break;
+        case STOP_RADIO:
+            RadioDeinit();
+            break;
+        case START_RADIO:
+            RadioInit();
+            break;
+        case RESTART_RADIO:
+            RadioDeinit();
+            RadioInit();
+            break;
         default:
             solarPrint("invalid Radio Command");
     }
