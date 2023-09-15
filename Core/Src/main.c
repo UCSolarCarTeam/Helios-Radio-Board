@@ -380,13 +380,14 @@ static void MX_GPIO_Init(void)
 void ToggleTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
-  RadioData radioData = {0};
+	RadioCommand radioCommand = {0};
 
   /* Infinite loop */
   for(;;)
   {
 #if TX
-    RadioCommand radioCommand = {.command = TRANSMIT, .size = 3};
+    radioCommand.size = 3;
+    radioCommand.command = TRANSMIT;
     radioCommand.data = solarMalloc(3);
     uint16_t ID = 1;
     memcpy(radioCommand.data, &ID, 2);
@@ -395,7 +396,7 @@ void ToggleTask(void *argument)
     } else {
         radioCommand.data[3] = 0;
     }
-    osMessagePut(radioCommandQueue, &radioCommand, 0,0);
+    osMessageQueuePut(radioCommandQueue, &radioCommand, 0,0);
     osDelay(5);
 #elif RX
     osMessageQueueGet(radioDataQueue, &radioData, NULL, 0);
@@ -420,7 +421,6 @@ void ToggleTask(void *argument)
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
-  RadioData radioData = {0};
 
   /* Infinite loop */
   for(;;)

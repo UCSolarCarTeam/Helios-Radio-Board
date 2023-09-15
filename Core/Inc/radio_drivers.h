@@ -97,6 +97,7 @@ typedef struct RadioData {
 extern SUBGHZ_HandleTypeDef hsubghz;
 extern osMutexId_t SUBGHZMutexHandle; //Mutex for radio_SPI, unused
 extern osMessageQueueId_t radioDataQueue; //acts as a middle man, if in TX mode, it sends data to radioTransmit, if in RX mode, its used to receive data from RadioReceive
+extern osMessageQueueId_t radioCommandQueue;
 extern osMessageQueueId_t RadioReceiveInterruptQueue; //actsa semaphore to tell the receive task when to read from the RX buffer
 
 //wrappers to use radio spi mutex
@@ -115,6 +116,7 @@ void RadioSetupRX();
 void RadioSendTXContinuousWave();
 int RadioTransmit(uint8_t* data, uint8_t size);
 void RadioReceiveStats();
+void radioHandleCommand(RadioCommand radioCommand);
 void RadioLoop();
 void RadioTask(void *argument);
 

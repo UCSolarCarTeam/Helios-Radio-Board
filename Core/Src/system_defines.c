@@ -43,6 +43,6 @@ void solarPrint(const char* str, ...) {
     }
     else
     {
-        //TODO: add assert and reset with printing functionality
+        //TODO: add error functionality reporting functionality
     }
 }

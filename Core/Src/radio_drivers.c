@@ -330,7 +330,8 @@ void RadioReceiveStats()
   RadioGetCommand(RADIO_GET_STATS, stats, 7);
 }
 
-void handleCommand(RadioCommand radioCommand){
+void radioHandleCommand(RadioCommand radioCommand)
+{
     switch(radioCommand.command){
         case SET_COMMAND:
             RadioSetCommand(radioCommand.address, radioCommand.data, radioCommand.size);
@@ -363,14 +364,10 @@ void handleCommand(RadioCommand radioCommand){
 void RadioLoop()
 {
 #if TX
-    RadioData radioData = {0};
+    RadioCommand radioCommand = {0};
 
-    osMessageQueueGet(radioDataQueue, &radioData, NULL, 0);
-
-    uint8_t data[10];
-    memcpy(data, &(radioData.ID), 2);
-    memcpy(&(data[2]), radioData.data, radioData.size);
-    RadioTransmit(data, radioData.size + 2);
+    osMessageQueueGet(radioCommandQueue, &radioCommand, NULL, 0);
+    radioHandleCommand(radioCommand);
 #elif RX
     RadioReceive();
 #endif
