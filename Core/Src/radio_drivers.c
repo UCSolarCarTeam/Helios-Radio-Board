@@ -341,11 +341,19 @@ void radioHandleCommand(RadioCommand radioCommand)
 {
     switch(radioCommand.command){
         case SET_COMMAND:
-            RadioSetCommand(radioCommand.address, radioCommand.data, radioCommand.size);
+            RadioSetCommand((SUBGHZ_RadioSetCmd_t)radioCommand.address, radioCommand.data, radioCommand.size);
+            /*TODO: add check for correct size of buffer input and valid SUBGHZ_RadioSetCmd_t enum*/
             break;
         case GET_COMMAND:
-            uint8_t command_readback[10];
-            RadioGetCommand(radioCommand.address, command_readback, radioCommand.size);
+            uint8_t commandReadback[10];
+            RadioGetCommand((SUBGHZ_RadioSetCmd_t)radioCommand.address, commandReadback, radioCommand.size);
+            solarPrint("readback Values: ");
+            for(int i = 0; i < radioCommand.size; i++)
+            {
+                solarPrint("%d, ", commandReadback[i]);
+            }
+            solarPrint("\n");
+            /*TODO: add check for correct size of buffer input and valid SUBGHZ_RadioSetCmd_t enum*/
             break;
         case WRITE_BUFFER:
             RadioWriteBuffer(radioCommand.address, radioCommand.data, radioCommand.size);

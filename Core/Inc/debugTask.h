@@ -7,7 +7,7 @@
 #ifndef DEBUG_TASK_H
 #define DEBUG_TASK_H
 
-#define PARAMTER_BUFFER_SIZE 4
+#define PARAMATER_BUFFER_SIZE 6
 
 #include "cmsis_os.h"
 #include "stm32wlxx_hal.h"
@@ -15,6 +15,7 @@
 #include <string.h>
 
 extern osMessageQueueId_t debugTaskQueue;
+extern osMessageQueueId_t radioCommandQueue;
 
 void debugTask(void *argument);
 

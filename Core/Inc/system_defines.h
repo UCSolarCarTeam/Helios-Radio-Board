@@ -64,6 +64,6 @@ void *solarMalloc(size_t xWantedSize);
 void solarPrint(const char* str, ...);
 
 uint8_t isValidDecimalCharacter(char* value);
-uint8_t strToIntArray(char* str, int* dest);
+uint8_t strToIntArray(char* str, int* dest, uint8_t* size);
 
 #endif /* SYSTEM_DEFINES_H */
