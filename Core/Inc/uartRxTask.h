@@ -9,8 +9,12 @@
 
 #include "cmsis_os.h"
 #include "stm32wlxx_hal.h"
+#include "system_defines.h"
+#include <string.h>
 
 extern UART_HandleTypeDef huart2;
+extern osMessageQueueId_t uartRxQueue;
+extern osMessageQueueId_t debugTaskQueue;
 
 void uartRxTask(void *argument);
 

@@ -12,7 +12,6 @@ void uartTxTask(void *argument)
   {
     UartTxData uartTxData = {0};
     osMessageQueueGet(uartTxQueue, &uartTxData, 0, 0);
-    HAL_StatusTypeDef ret = 0;
     if (HAL_UART_Transmit(UART_HANDLER, uartTxData.data, uartTxData.size, 0) != HAL_OK){
       //add error handler
     };

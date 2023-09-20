@@ -24,6 +24,9 @@
 /* USER CODE BEGIN Includes */
 #include "radio_drivers.h"
 #include "system_defines.h"
+#include "uartRxTask.h"
+#include "uartTxTask.h"
+#include "debugTask.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -49,7 +52,7 @@ osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
   .name = "defaultTask",
   .priority = (osPriority_t) osPriorityNormal,
-  .stack_size = 128 * 4
+  .stack_size = DEFAULT_TASK_STACK_SIZE
 };
 /* USER CODE BEGIN PV */
 /* Definitions for RadioTask */
@@ -57,7 +60,7 @@ osThreadId_t radioTaskHandle;
 const osThreadAttr_t radioTask_attributes = {
   .name = "RadioTask",
   .priority = (osPriority_t) osPriorityHigh,
-  .stack_size = 128 * 4
+  .stack_size = DEFAULT_TASK_STACK_SIZE
 };
 
 /* Definitions for ToggleTask */
@@ -65,7 +68,31 @@ osThreadId_t toggleTaskHandle;
 const osThreadAttr_t toggleTask_attributes = {
   .name = "ToggleTask",
   .priority = (osPriority_t) osPriorityNormal,
-  .stack_size = 128 * 4
+  .stack_size = DEFAULT_TASK_STACK_SIZE
+};
+
+/* Definitions for uartRxTask */
+osThreadId_t uartRxTaskHandle;
+const osThreadAttr_t uartRxTask_attributes = {
+  .name = "uartRxTask",
+  .priority = (osPriority_t) osPriorityNormal,
+  .stack_size = DEFAULT_TASK_STACK_SIZE
+};
+
+/* Definitions for uartTxTask */
+osThreadId_t uartTxTaskHandle;
+const osThreadAttr_t uartTxTask_attributes = {
+  .name = "uartTxTask",
+  .priority = (osPriority_t) osPriorityNormal,
+  .stack_size = DEFAULT_TASK_STACK_SIZE
+};
+
+/* Definitions for debugTask */
+osThreadId_t debugTaskHandle;
+const osThreadAttr_t debugTask_attributes = {
+  .name = "debugTask",
+  .priority = (osPriority_t) osPriorityNormal,
+  .stack_size = DEFAULT_TASK_STACK_SIZE
 };
 
 /* Definitions for SPIMutex */
@@ -82,7 +109,9 @@ const osMutexAttr_t vaListMutex_attributes = {
 
 osMessageQueueId_t radioCommandQueue;
 osMessageQueueId_t uartTxQueue;
+osMessageQueueId_t uartRxQueue;
 osMessageQueueId_t radioDataQueue;
+osMessageQueueId_t debugTaskQueue;
 #if RX
 osMessageQueueId_t RadioReceiveInterruptQueue;
 #endif
@@ -157,6 +186,8 @@ int main(void)
   radioDataQueue = osMessageQueueNew(RADIO_DATA_QUEUE_COUNT, sizeof(RadioData), NULL);
   radioCommandQueue = osMessageQueueNew(UART_RX_DATA_QUEUE_COUNT, sizeof(RadioCommand), NULL);
   uartTxQueue = osMessageQueueNew(UART_TX_DATA_QUEUE_COUNT, sizeof(UartTxData), NULL);
+  uartRxQueue = osMessageQueueNew(UART_RX_DATA_QUEUE_COUNT, sizeof(uint8_t), NULL);
+  debugTaskQueue = osMessageQueueNew(DEBUG_QUEUE_COUNT, UART_RX_BUFFER_SIZE, NULL);
 #if RX
   RadioReceiveInterruptQueue = osMessageQueueNew(RADIO_RECEIVE_INTERRUPT_QUEUE_COUNT, sizeof(uint8_t), NULL);
 #endif
@@ -172,6 +203,15 @@ int main(void)
 
   /* creation of toggleTask */
   toggleTaskHandle = osThreadNew(ToggleTask, NULL, &toggleTask_attributes);
+
+  /* creation of uartRxTask*/
+  uartRxTaskHandle = osThreadNew(uartRxTask, NULL, &uartRxTask_attributes);
+  
+  /* creation of uartRxTask*/
+  uartTxTaskHandle = osThreadNew(uartTxTask, NULL, &uartTxTask_attributes);
+
+  /* creation of uartRxTask*/
+  debugTaskHandle = osThreadNew(debugTask, NULL, &debugTask_attributes);
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */

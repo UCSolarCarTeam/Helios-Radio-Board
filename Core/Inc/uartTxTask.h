@@ -11,8 +11,6 @@
 #include "stm32wlxx_hal.h"
 #include "system_defines.h"
 
-#define UART_HANDLER &huart2
-
 extern UART_HandleTypeDef huart2;
 extern osMessageQueueId_t uartTxQueue;
 
