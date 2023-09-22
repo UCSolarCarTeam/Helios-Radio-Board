@@ -8,7 +8,7 @@
 #include "radio_drivers.h"
 
 RadioConfig radioConfig = { .preambleSymbols = 0xC,
-                            .payloadLength = 0,
+                            .payloadLength = 8,
                             .headerType = 0,
                             .CRCenable = 0,
                             .invertIQ = 0,
@@ -118,7 +118,6 @@ void RadioInit()
     uint8_t bufferBaseAddress[] = {radioConfig.TXaddress, radioConfig.RXaddress};
     size = 2;
     RadioSetCommand(RADIO_SET_BUFFERBASEADDRESS, bufferBaseAddress, size);
-
 
 #if LORA
     //LORA packet type
@@ -264,12 +263,22 @@ int RadioTransmit(uint8_t* data, uint8_t size)
     RadioSetCommand(RADIO_SET_TX, timeout, 3);
 
     //Add handle of failed TX (blink the blue LED if so)
+    uint8_t status;
+    RadioGetCommand(RADIO_GET_STATUS, &status, 1);
+    while((status & 0b01110000) != 0b00100000)
+        RadioGetCommand(RADIO_GET_STATUS, &status, 1);
+    if((status & 0b00001110) == 0b00001100) {
+        solarPrint("blinky blink %d\n", data[0]);
+    }
 
     return SOLAR_TRUE;
 }
 #elif RX
 void RadioSetupRX()
 {   
+
+    uint8_t status;
+
     //enable RX done, TX done, and RX/TX timeout interrupts on IRQ line 1 (from my understanding, an IRQ line can only halt processor once at a time)
     uint8_t dioIRQConfig[] = {0x02, 0x02, 0x02, 0x02, 0x00, 0x00, 0x00, 0x00};
     uint16_t size = 8;
@@ -287,15 +296,12 @@ void RadioSetupRX()
 
 //TODO: use semaphore instead, for the future
 void HAL_SUBGHZ_RxCpltCallback(SUBGHZ_HandleTypeDef *hsubghz) {
-    uint8_t messageReceived = 1;
-    osMessageQueuePut(RadioReceiveInterruptQueue, &messageReceived, 0, 100);
+    RadioCommand radioCommand = {0};
+    radioCommand.command = RECEIVE;
+    osMessageQueuePut(radioCommandQueue, &radioCommand, 0, 0);
 }
 
 void RadioReceive() {
-    //wait for receive command from RX interrupt
-    uint8_t receive;
-    osMessageQueueGet(RadioReceiveInterruptQueue, &receive, 0, osWaitForever);
-
     //TODO: Problem, if more packets are sent than we can handle, we could read the same packet over and over again
     //since our current method uses GET_RXBUFFERSTATUS, which only gives you the newest packet
     //probably make our method to keep track of the buffer read and interate until you get to the newest packet
@@ -369,9 +375,15 @@ void radioHandleCommand(RadioCommand *radioCommand)
             uint8_t register_readback;
             RadioReadRegister(radioCommand->address, &register_readback);
             break;
+    #if TX
         case TRANSMIT:
             RadioTransmit(radioCommand->data, (uint8_t)radioCommand->size);
             break;
+    #elif RX
+        case RECEIVE:
+            RadioReceive();
+            break;
+    #endif
         case STOP_RADIO:
             RadioDeinit();
             break;
@@ -391,16 +403,15 @@ void radioHandleCommand(RadioCommand *radioCommand)
 //main radio function, called by the radioTask
 void RadioLoop()
 {
-#if TX
     RadioCommand radioCommand = {0};
 
     osStatus_t ret = osMessageQueueGet(radioCommandQueue, &radioCommand, NULL, 1000);
     if(ret == osOK) {
     	radioHandleCommand(&radioCommand);
     }
-#elif RX
-    RadioReceive();
-#endif
+
+    uint8_t status;
+    RadioGetCommand(RADIO_GET_STATUS, &status, 1);
 }
 
 /**

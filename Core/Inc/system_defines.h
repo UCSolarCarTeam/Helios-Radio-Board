@@ -43,9 +43,10 @@ typedef enum RadioCommandType {
     WRITE_REGISTER = 4,
     READ_REGISTER = 5,
     TRANSMIT = 6,
-    STOP_RADIO = 7,
-    START_RADIO = 8,
-    RESTART_RADIO = 9
+    RECEIVE = 7,
+    STOP_RADIO = 8,
+    START_RADIO = 9,
+    RESTART_RADIO = 10
 } RadioCommandType;
 
 typedef struct RadioCommand {

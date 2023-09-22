@@ -420,10 +420,13 @@ static void MX_GPIO_Init(void)
 void ToggleTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
+#if TX
 	RadioCommand radioCommand = {0};
   uint8_t sendBlink = SOLAR_TRUE;
 	uint16_t ID = 1;
-
+#elif RX
+  RadioData radioData = {0};
+#endif
   /* Infinite loop */
   for(;;)
   {
@@ -442,16 +445,17 @@ void ToggleTask(void *argument)
       osStatus_t ret = osMessageQueuePut(radioCommandQueue, &radioCommand, 0, 1000);
       if(ret != osOK) {
         solarFree(radioCommand.data);
+      } else {
+        ID++;
       }
     }
 
     osMessageQueueGet(toggleCommandQueue, &sendBlink, 0, 0);
-    
-    solarPrint("blinky blink %d\n", ID++);
     osDelay(500);
 #elif RX
     osMessageQueueGet(radioDataQueue, &radioData, NULL, osWaitForever);
-    if(radioData.ID == 1 && radioData.data[0] == 1) {
+    solarPrint("ID: %d", radioData.ID);
+    if(radioData.data[0] == 1) {
         HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_SET);
     } else {
         HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_RESET);
