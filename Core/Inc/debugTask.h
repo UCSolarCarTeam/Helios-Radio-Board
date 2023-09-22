@@ -16,7 +16,8 @@
 
 extern osMessageQueueId_t debugTaskQueue;
 extern osMessageQueueId_t radioCommandQueue;
+extern osMessageQueueId_t toggleCommandQueue;
 
-void debugTask(void *argument);
+void DebugTask(void *argument);
 
 #endif /* DEBUG_TASK_H */

@@ -20,7 +20,7 @@
 
 #define UART_HANDLER &huart2
 
-#define DEFAULT_TASK_STACK_SIZE 128 * 4
+#define DEFAULT_TASK_STACK_SIZE 128 * 8
 
 #define DEBUG_TAKE_MAX_TIME_MS 10
 #define DEBUG_PRINT_MAX_SIZE 256
@@ -28,6 +28,7 @@
 #define UART_RX_DATA_QUEUE_COUNT 16
 #define UART_TX_DATA_QUEUE_COUNT 16
 #define DEBUG_QUEUE_COUNT 10
+#define TOGGLE_QUEUE_COUNT 5
 
 #define UART_RX_BUFFER_SIZE 256
 
@@ -60,6 +61,7 @@ typedef struct UartTxData {
 } UartTxData;
 
 void *solarMalloc(size_t xWantedSize);
+void solarFree(void *ptr);
 
 void solarPrint(const char* str, ...);
 

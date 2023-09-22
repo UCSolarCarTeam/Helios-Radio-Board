@@ -112,6 +112,7 @@ osMessageQueueId_t uartTxQueue;
 osMessageQueueId_t uartRxQueue;
 osMessageQueueId_t radioDataQueue;
 osMessageQueueId_t debugTaskQueue;
+osMessageQueueId_t toggleCommandQueue;
 #if RX
 osMessageQueueId_t RadioReceiveInterruptQueue;
 #endif
@@ -188,6 +189,7 @@ int main(void)
   uartTxQueue = osMessageQueueNew(UART_TX_DATA_QUEUE_COUNT, sizeof(UartTxData), NULL);
   uartRxQueue = osMessageQueueNew(UART_RX_DATA_QUEUE_COUNT, sizeof(uint8_t), NULL);
   debugTaskQueue = osMessageQueueNew(DEBUG_QUEUE_COUNT, UART_RX_BUFFER_SIZE, NULL);
+  toggleCommandQueue = osMessageQueueNew(TOGGLE_QUEUE_COUNT, sizeof(uint8_t), NULL);
 #if RX
   RadioReceiveInterruptQueue = osMessageQueueNew(RADIO_RECEIVE_INTERRUPT_QUEUE_COUNT, sizeof(uint8_t), NULL);
 #endif
@@ -198,20 +200,18 @@ int main(void)
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
+
   /* creation of toggleTask */
   radioTaskHandle = osThreadNew(RadioTask, NULL, &radioTask_attributes);
-
   /* creation of toggleTask */
   toggleTaskHandle = osThreadNew(ToggleTask, NULL, &toggleTask_attributes);
+  /* creation of uartRxTask*/
+  uartRxTaskHandle = osThreadNew(UartRxTask, NULL, &uartRxTask_attributes);
+  /* creation of uartTxTask*/
+  uartTxTaskHandle = osThreadNew(UartTxTask, NULL, &uartTxTask_attributes);
+  /* creation of debugTask*/
+  debugTaskHandle = osThreadNew(DebugTask, NULL, &debugTask_attributes);
 
-  /* creation of uartRxTask*/
-  uartRxTaskHandle = osThreadNew(uartRxTask, NULL, &uartRxTask_attributes);
-  
-  /* creation of uartRxTask*/
-  uartTxTaskHandle = osThreadNew(uartTxTask, NULL, &uartTxTask_attributes);
-
-  /* creation of uartRxTask*/
-  debugTaskHandle = osThreadNew(debugTask, NULL, &debugTask_attributes);
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -421,6 +421,8 @@ void ToggleTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
 	RadioCommand radioCommand = {0};
+  uint8_t sendBlink = SOLAR_TRUE;
+	uint16_t ID = 1;
 
   /* Infinite loop */
   for(;;)
@@ -429,17 +431,26 @@ void ToggleTask(void *argument)
     radioCommand.size = 3;
     radioCommand.command = TRANSMIT;
     radioCommand.data = solarMalloc(3);
-    uint16_t ID = 1;
     memcpy(radioCommand.data, &ID, 2);
     if(HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin)) {
         radioCommand.data[3] = 1;
     } else {
         radioCommand.data[3] = 0;
     }
-    osMessageQueuePut(radioCommandQueue, &radioCommand, 0,0);
-    osDelay(5);
+
+    if(sendBlink){
+      osStatus_t ret = osMessageQueuePut(radioCommandQueue, &radioCommand, 0, 1000);
+      if(ret != osOK) {
+        solarFree(radioCommand.data);
+      }
+    }
+
+    osMessageQueueGet(toggleCommandQueue, &sendBlink, 0, 0);
+    
+    solarPrint("blinky blink %d\n", ID++);
+    osDelay(500);
 #elif RX
-    osMessageQueueGet(radioDataQueue, &radioData, NULL, 0);
+    osMessageQueueGet(radioDataQueue, &radioData, NULL, osWaitForever);
     if(radioData.ID == 1 && radioData.data[0] == 1) {
         HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_SET);
     } else {

@@ -5,15 +5,16 @@
   * @param  argument: Not used
   * @retval None
 */
-void uartTxTask(void *argument)
+void UartTxTask(void *argument)
 {
   /* Infinite loop */
   for(;;)
   {
     UartTxData uartTxData = {0};
-    osMessageQueueGet(uartTxQueue, &uartTxData, 0, 0);
-    if (HAL_UART_Transmit(UART_HANDLER, uartTxData.data, uartTxData.size, 0) != HAL_OK){
+    osMessageQueueGet(uartTxQueue, &uartTxData, 0, osWaitForever);
+    if (HAL_UART_Transmit(UART_HANDLER, uartTxData.data, uartTxData.size, 100000) != HAL_OK){
       //add error handler
     };
+    solarFree(uartTxData.data);
   }
 }

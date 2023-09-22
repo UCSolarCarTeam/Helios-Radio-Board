@@ -10,8 +10,15 @@
 void *solarMalloc(size_t xWantedSize)
 {
     void *ret = pvPortMalloc(xWantedSize);
-
     return ret;
+}
+
+/**
+ * @brief Free function
+ * @param ptr Pointer to the data to free
+ */
+void solarFree(void* ptr) {
+    vPortFree(ptr);
 }
 
 void solarPrint(const char* str, ...) {
@@ -19,7 +26,7 @@ void solarPrint(const char* str, ...) {
     if(osMutexWait(vaListMutexHandle, 0) == osOK)
     {
         // If we have a message, and can use VA list, extract the string into a new buffer, and null terminate it
-        uint8_t str_buffer[DEBUG_PRINT_MAX_SIZE] = {};
+        uint8_t str_buffer[DEBUG_PRINT_MAX_SIZE];
         va_list argument_list;
         va_start(argument_list, str);
         int16_t buflen = vsnprintf((char *)(str_buffer), sizeof(str_buffer) - 1, str, argument_list);
@@ -39,7 +46,9 @@ void solarPrint(const char* str, ...) {
         memcpy(uartTxData.data, str_buffer, buflen); // null character is ignored, since terminal adds it anyways
 
         //Send this packet off to the UART Task
-        osMessageQueuePut(uartTxQueue, &uartTxData, 0, 0);
+        osStatus_t ret = osMessageQueuePut(uartTxQueue, &uartTxData, 0, 100);
+        if(ret != osOK)
+            solarFree(uartTxData.data);
     }
     else
     {

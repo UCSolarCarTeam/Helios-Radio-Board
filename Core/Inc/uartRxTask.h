@@ -16,6 +16,6 @@ extern UART_HandleTypeDef huart2;
 extern osMessageQueueId_t uartRxQueue;
 extern osMessageQueueId_t debugTaskQueue;
 
-void uartRxTask(void *argument);
+void UartRxTask(void *argument);
 
 #endif /* UART_RX_TASK_H */

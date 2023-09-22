@@ -40,7 +40,7 @@ void uartRxStringHandler(uint8_t* uartRxBuffer)
   * @param  argument: Not used
   * @retval None
 */
-void uartRxTask(void *argument)
+void UartRxTask(void *argument)
 {
   HAL_UART_Receive_IT(UART_HANDLER, &readback, 1);
   uint8_t uartRxBufferIndex = 0;
@@ -50,15 +50,15 @@ void uartRxTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    osMessageQueueGet(uartRxQueue, &newChar, 0, 0);
+    osMessageQueueGet(uartRxQueue, &newChar, 0, osWaitForever);
     uartRxMessageReady = uartRxByteHandler(uartRxBuffer, &uartRxBufferIndex, newChar);
     if(uartRxMessageReady) 
     {
         uartRxMessageReady = SOLAR_FALSE;
         uint8_t message[UART_RX_BUFFER_SIZE];
-        memcpy(uartRxBuffer, message, uartRxBufferIndex);
+        memcpy(message, uartRxBuffer, uartRxBufferIndex);
         uartRxBufferIndex = 0;
-        osMessageQueuePut(debugTaskQueue, message, 0, 0);
+        osMessageQueuePut(debugTaskQueue, message, 0, osWaitForever);
     }
   }
 }

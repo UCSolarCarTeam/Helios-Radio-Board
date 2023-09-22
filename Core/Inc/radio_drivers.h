@@ -116,7 +116,7 @@ void RadioSetupRX();
 void RadioSendTXContinuousWave();
 int RadioTransmit(uint8_t* data, uint8_t size);
 void RadioReceiveStats();
-void radioHandleCommand(RadioCommand radioCommand);
+void radioHandleCommand(RadioCommand *radioCommand);
 void RadioLoop();
 void RadioTask(void *argument);
 

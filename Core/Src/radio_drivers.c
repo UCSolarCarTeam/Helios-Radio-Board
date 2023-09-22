@@ -256,7 +256,7 @@ int RadioTransmit(uint8_t* data, uint8_t size)
       RadioSetCommand(RADIO_SET_PACKETPARAMS, packetParameters, commandSize);
     }
     else {
-      return 0;
+      return SOLAR_FALSE;
     }
 
     //TX oneshot with no timeout
@@ -265,7 +265,7 @@ int RadioTransmit(uint8_t* data, uint8_t size)
 
     //Add handle of failed TX (blink the blue LED if so)
 
-    return 1;
+    return SOLAR_TRUE;
 }
 #elif RX
 void RadioSetupRX()
@@ -288,7 +288,7 @@ void RadioSetupRX()
 //TODO: use semaphore instead, for the future
 void HAL_SUBGHZ_RxCpltCallback(SUBGHZ_HandleTypeDef *hsubghz) {
     uint8_t messageReceived = 1;
-    osMessageQueuePut(RadioReceiveInterruptQueue, &messageReceived, 0, 0);
+    osMessageQueuePut(RadioReceiveInterruptQueue, &messageReceived, 0, 100);
 }
 
 void RadioReceive() {
@@ -317,7 +317,7 @@ void RadioReceive() {
     radioData.size = bufferStatus[0] - 2; //minus two cause 2 of those are from ID
     memcpy(&(radioData.ID), data, 2);
     memcpy(&(radioData.data), &(data[2]), radioData.size);
-    osMessageQueuePut(radioDataQueue, &radioData, 0, 0);
+    osMessageQueuePut(radioDataQueue, &radioData, 0, osWaitForever);
 }
 #endif
 
@@ -337,18 +337,19 @@ void RadioReceiveStats()
   RadioGetCommand(RADIO_GET_STATS, stats, 7);
 }
 
-void radioHandleCommand(RadioCommand radioCommand)
+void radioHandleCommand(RadioCommand *radioCommand)
 {
-    switch(radioCommand.command){
+    switch(radioCommand->command)
+    {
         case SET_COMMAND:
-            RadioSetCommand((SUBGHZ_RadioSetCmd_t)radioCommand.address, radioCommand.data, radioCommand.size);
+            RadioSetCommand((SUBGHZ_RadioSetCmd_t)radioCommand->address, radioCommand->data, radioCommand->size);
             /*TODO: add check for correct size of buffer input and valid SUBGHZ_RadioSetCmd_t enum*/
             break;
         case GET_COMMAND:
             uint8_t commandReadback[10];
-            RadioGetCommand((SUBGHZ_RadioSetCmd_t)radioCommand.address, commandReadback, radioCommand.size);
+            RadioGetCommand((SUBGHZ_RadioSetCmd_t)radioCommand->address, commandReadback, radioCommand->size);
             solarPrint("readback Values: ");
-            for(int i = 0; i < radioCommand.size; i++)
+            for(int i = 0; i < radioCommand->size; i++)
             {
                 solarPrint("%d, ", commandReadback[i]);
             }
@@ -356,20 +357,20 @@ void radioHandleCommand(RadioCommand radioCommand)
             /*TODO: add check for correct size of buffer input and valid SUBGHZ_RadioSetCmd_t enum*/
             break;
         case WRITE_BUFFER:
-            RadioWriteBuffer(radioCommand.address, radioCommand.data, radioCommand.size);
+            RadioWriteBuffer(radioCommand->address, radioCommand->data, radioCommand->size);
             break;
         case READ_BUFFER:
-            RadioReadBuffer(radioCommand.address, radioCommand.data, radioCommand.size);
+            RadioReadBuffer(radioCommand->address, radioCommand->data, radioCommand->size);
             break;
         case WRITE_REGISTER:
-            RadioWriteRegister(radioCommand.address, *radioCommand.data);
+            RadioWriteRegister(radioCommand->address, *radioCommand->data);
             break;
         case READ_REGISTER:
             uint8_t register_readback;
-            RadioReadRegister(radioCommand.address, &register_readback);
+            RadioReadRegister(radioCommand->address, &register_readback);
             break;
         case TRANSMIT:
-            RadioTransmit(radioCommand.data, (uint8_t)radioCommand.size);
+            RadioTransmit(radioCommand->data, (uint8_t)radioCommand->size);
             break;
         case STOP_RADIO:
             RadioDeinit();
@@ -384,6 +385,7 @@ void radioHandleCommand(RadioCommand radioCommand)
         default:
             solarPrint("invalid Radio Command");
     }
+    solarFree(radioCommand->data);
 }
 
 //main radio function, called by the radioTask
@@ -392,8 +394,10 @@ void RadioLoop()
 #if TX
     RadioCommand radioCommand = {0};
 
-    osMessageQueueGet(radioCommandQueue, &radioCommand, NULL, 0);
-    radioHandleCommand(radioCommand);
+    osStatus_t ret = osMessageQueueGet(radioCommandQueue, &radioCommand, NULL, 1000);
+    if(ret == osOK) {
+    	radioHandleCommand(&radioCommand);
+    }
 #elif RX
     RadioReceive();
 #endif
