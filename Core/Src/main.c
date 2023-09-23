@@ -451,7 +451,7 @@ void ToggleTask(void *argument)
     }
 
     osMessageQueueGet(toggleCommandQueue, &sendBlink, 0, 0);
-    osDelay(500);
+    osDelay(1);
 #elif RX
     osMessageQueueGet(radioDataQueue, &radioData, NULL, osWaitForever);
     solarPrint("ID: %d", radioData.ID);

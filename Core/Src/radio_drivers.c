@@ -17,7 +17,7 @@ RadioConfig radioConfig = { .preambleSymbols = 0xC,
                             .cr = 1,
                             .ldrOptimization = 0,
                             .frequency = 915000000,
-                            .SMPSEenable = 0x40, //register value
+                            .SMPSEenable = ((uint8_t) (1<<6)), //register value
                             .regulatorMode = 1,
                             .TXaddress = 0,
                             .RXaddress = 8,
@@ -131,7 +131,7 @@ void RadioInit()
 
 #if LORA
     // 12 preamble symbols, explicit header (variable size), size (overwritten), CRC disabled, standard IQ setup (no idea)
-    uint8_t packetParameters[] = {radioConfig.preambleSymbols >> 8, radioConfig.preambleSymbols & 0xFF, radioConfig.payloadLength, radioConfig.headerType, radioConfig.CRCenable, radioConfig.invertIQ};
+    uint8_t packetParameters[] = {radioConfig.preambleSymbols >> 8, radioConfig.payloadLength & 0xFF, radioConfig.headerType, radioConfig.CRCenable, radioConfig.invertIQ};
     size = 6;
 #elif FSK
     //12 preamble symbols, preamble detection disabled, 8 bit sync word,addres comparison/filtering disabled, fixed payload, payload_length (overwritten), CRC disabled, whitening disabled
@@ -245,7 +245,7 @@ int RadioTransmit(uint8_t* data, uint8_t size)
       RadioWriteBuffer(radioConfig.TXaddress, data, size);
 #if LORA
     // 12 preamble symbols, explicit header (variable size), size (overwritten), CRC disabled, standard IQ setup (no idea)
-    uint8_t packetParameters[] = {radioConfig.preambleSymbols >> 8, radioConfig.preambleSymbols & 0xFF, size, radioConfig.headerType, radioConfig.CRCenable, radioConfig.invertIQ};
+    uint8_t packetParameters[] = {radioConfig.preambleSymbols >> 8, radioConfig.preambleSymbols & 0xFF, radioConfig.headerType, size, radioConfig.CRCenable, radioConfig.invertIQ};
     uint8_t commandSize = 6;
 #elif FSK
     //12 preamble symbols, preamble detection disabled, 8 bit sync word,addres comparison/filtering disabled, fixed payload, payload_length (overwritten), CRC disabled, whitening disabled
@@ -269,6 +269,7 @@ int RadioTransmit(uint8_t* data, uint8_t size)
         RadioGetCommand(RADIO_GET_STATUS, &status, 1);
     if((status & 0b00001110) == 0b00001100) {
         solarPrint("blinky blink %d\n", data[0]);
+        HAL_GPIO_TogglePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin);
     }
 
     return SOLAR_TRUE;
@@ -341,6 +342,10 @@ void RadioReceiveStats()
   RadioGetCommand(RADIO_GET_ERROR, error, 3);
   RadioGetCommand(RADIO_GET_PACKETSTATUS, packetStatus, 4);
   RadioGetCommand(RADIO_GET_STATS, stats, 7);
+
+  //Clear interrupts
+  uint8_t IRQClear[] = {0x03, 0xFF};
+  RadioSetCommand(RADIO_CLR_IRQSTATUS, IRQClear, 2);
 }
 
 void radioHandleCommand(RadioCommand *radioCommand)
@@ -409,9 +414,6 @@ void RadioLoop()
     if(ret == osOK) {
     	radioHandleCommand(&radioCommand);
     }
-
-    uint8_t status;
-    RadioGetCommand(RADIO_GET_STATUS, &status, 1);
 }
 
 /**
