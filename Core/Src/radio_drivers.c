@@ -93,7 +93,7 @@ void RadioReadRegister(uint16_t Address, uint8_t *pValue) {
 void RadioDeinit() 
 {
     uint8_t data = 0x00;
-    RadioSetCommand(RADIO_SET_SLEEP, &data, 0);
+    RadioSetCommand(RADIO_SET_SLEEP, &data, 1);
 }
 
 void RadioInit() 
@@ -265,13 +265,16 @@ int RadioTransmit(uint8_t* data, uint8_t size)
     //Add handle of failed TX (blink the blue LED if so)
     uint8_t status;
     RadioGetCommand(RADIO_GET_STATUS, &status, 1);
-    while((status & 0b01110000) != 0b00100000)
+    while((status & 0b01110000) == 0b01100000)
         RadioGetCommand(RADIO_GET_STATUS, &status, 1);
     if((status & 0b00001110) == 0b00001100) {
         solarPrint("blinky blink %d\n", data[0]);
         HAL_GPIO_TogglePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin);
     }
 
+    //warm sleep, cfg maintained
+    uint8_t sleepCommand = 0x04;
+    RadioSetCommand(RADIO_SET_SLEEP, &sleepCommand, 1);
     return SOLAR_TRUE;
 }
 #elif RX

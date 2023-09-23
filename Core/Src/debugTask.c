@@ -50,5 +50,17 @@ void DebugTask(void *argument)
         strToIntArray((char*)debugBuffer + 11, parameterBuffer, &parameterBufferSize);
         osMessageQueuePut(toggleCommandQueue, (uint8_t*)parameterBuffer, 0, osWaitForever);
     }
+    else if(!strncmp((char*)debugBuffer, "radioDeInit", 11)) //radio set command parameters are [command enum,size]
+	{
+		RadioCommand radioCommand = {0};
+		radioCommand.command = STOP_RADIO;
+		osMessageQueuePut(radioCommandQueue, &radioCommand, 0, osWaitForever);
+	}
+    else if(!strncmp((char*)debugBuffer, "radioInit", 11)) //radio set command parameters are [command enum,size]
+	{
+		RadioCommand radioCommand = {0};
+		radioCommand.command = START_RADIO;
+		osMessageQueuePut(radioCommandQueue, &radioCommand, 0, osWaitForever);
+	}
   }
 }
