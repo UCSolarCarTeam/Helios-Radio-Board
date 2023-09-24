@@ -18,7 +18,7 @@
 #define SOLAR_TRUE 1
 #define SOLAR_FALSE 0
 
-#define UART_HANDLER &huart2
+#define UART_HANDLER &hlpuart1
 
 #define DEFAULT_TASK_STACK_SIZE 128 * 8
 

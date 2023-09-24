@@ -190,13 +190,13 @@ void RadioInit()
 #if TX
     RadioSetupTX();
     //Debug lights
-    HAL_GPIO_WritePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_RESET);
 #elif RX
     RadioSetupRX();
     //Debug lights
-    HAL_GPIO_WritePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_SET);
 #endif
 }
 
@@ -221,15 +221,11 @@ void RadioSetupTX()
     RadioSetCommand(RADIO_CFG_DIOIRQ, dioIRQConfig, size);
 
 #if RF_HP
-    //Relay setup for HP TX according to dev-board datasheet
-    HAL_GPIO_WritePin(FE_CTRL1_GPIO_Port, FE_CTRL1_Pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(FE_CTRL2_GPIO_Port, FE_CTRL2_Pin, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(FE_CTRL3_GPIO_Port, FE_CTRL3_Pin, GPIO_PIN_SET);
+    //Relay setup for HP TX according to schematic
+    HAL_GPIO_WritePin(RF_CTRL1_GPIO_Port, RF_CTRL1_Pin, GPIO_PIN_SET);
 #else
-    //Relay setup for HP RX according to dev-board datasheet
-    HAL_GPIO_WritePin(FE_CTRL1_GPIO_Port, FE_CTRL1_Pin, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(FE_CTRL2_GPIO_Port, FE_CTRL2_Pin, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(FE_CTRL3_GPIO_Port, FE_CTRL3_Pin, GPIO_PIN_SET);
+    //Relay setup cannot be done for radio board according to implementation
+    HAL_GPIO_WritePin(RF_CTRL1_GPIO_Port, RF_CTRL1_Pin, GPIO_PIN_SET);
 #endif
 }
 
@@ -262,14 +258,14 @@ int RadioTransmit(uint8_t* data, uint8_t size)
     uint8_t timeout[] = {0x00, 0x00, 0x00}; 
     RadioSetCommand(RADIO_SET_TX, timeout, 3);
 
-    //Add handle of failed TX (blink the blue LED if so)
+    //Add handle of failed TX ()
     uint8_t status;
     RadioGetCommand(RADIO_GET_STATUS, &status, 1);
     while((status & 0b01110000) == 0b01100000)
         RadioGetCommand(RADIO_GET_STATUS, &status, 1);
     if((status & 0b00001110) == 0b00001100) {
         solarPrint("blinky blink %d\n", data[0]);
-        HAL_GPIO_TogglePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin);
+        HAL_GPIO_TogglePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin);
     }
 
     //warm sleep, cfg maintained
@@ -289,9 +285,7 @@ void RadioSetupRX()
     RadioSetCommand(RADIO_CFG_DIOIRQ, dioIRQConfig, size);
 
     //Relay setup for RX according to dev-board datasheet
-    HAL_GPIO_WritePin(FE_CTRL1_GPIO_Port, FE_CTRL1_Pin, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(FE_CTRL2_GPIO_Port, FE_CTRL2_Pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(FE_CTRL3_GPIO_Port, FE_CTRL3_Pin, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(RF_CTRL1_GPIO_Port, RF_CTRL1_Pin, GPIO_PIN_RESET);
 
     //no timeout, continuous receive
     uint8_t timeout[] = {0xFF, 0xFF, 0xFF};

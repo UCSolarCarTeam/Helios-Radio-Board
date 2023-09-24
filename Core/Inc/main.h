@@ -56,24 +56,29 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define BLUE_LED_Pin GPIO_PIN_15
-#define BLUE_LED_GPIO_Port GPIOB
-#define GREEN_LED_Pin GPIO_PIN_9
-#define GREEN_LED_GPIO_Port GPIOB
-#define FE_CTRL3_Pin GPIO_PIN_3
-#define FE_CTRL3_GPIO_Port GPIOC
-#define B1_Pin GPIO_PIN_0
-#define B1_GPIO_Port GPIOA
-#define FE_CTRL2_Pin GPIO_PIN_5
-#define FE_CTRL2_GPIO_Port GPIOC
-#define FE_CTRL1_Pin GPIO_PIN_4
-#define FE_CTRL1_GPIO_Port GPIOC
-#define B3_Pin GPIO_PIN_6
-#define B3_GPIO_Port GPIOC
-#define B2_Pin GPIO_PIN_1
-#define B2_GPIO_Port GPIOA
-#define RED_LED_Pin GPIO_PIN_11
-#define RED_LED_GPIO_Port GPIOB
+#define CAN_CS_Pin GPIO_PIN_6
+#define CAN_CS_GPIO_Port GPIOB
+#define FLASH_CS_Pin GPIO_PIN_7
+#define FLASH_CS_GPIO_Port GPIOB
+#define CAN_INT_Pin GPIO_PIN_8
+#define CAN_INT_GPIO_Port GPIOB
+#define CAN_INT_EXTI_IRQn EXTI9_5_IRQn
+#define BUTTON1_Pin GPIO_PIN_0
+#define BUTTON1_GPIO_Port GPIOA
+#define CAN_RX0BF_Pin GPIO_PIN_4
+#define CAN_RX0BF_GPIO_Port GPIOA
+#define CAN_RX0BF_EXTI_IRQn EXTI4_IRQn
+#define CAN_RX1BF_Pin GPIO_PIN_5
+#define CAN_RX1BF_GPIO_Port GPIOA
+#define CAN_RX1BF_EXTI_IRQn EXTI9_5_IRQn
+#define LED_RED_Pin GPIO_PIN_7
+#define LED_RED_GPIO_Port GPIOA
+#define LED_GREEN_Pin GPIO_PIN_8
+#define LED_GREEN_GPIO_Port GPIOA
+#define LED_BLUE_Pin GPIO_PIN_9
+#define LED_BLUE_GPIO_Port GPIOA
+#define RF_CTRL1_Pin GPIO_PIN_2
+#define RF_CTRL1_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 /* USER CODE END Private defines */
