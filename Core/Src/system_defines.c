@@ -65,7 +65,7 @@ uint8_t isValidDecimalCharacter(char* value) {
 }
 
 
-//Separate each integer of a string separated by whitespace into an array of uint8_t
+//Separate each integer of a string separated by whitespace into an array of ints
 uint8_t strToIntArray(char* str, int* dest, uint8_t* size) {
     int temp = 0;
     int index = 0;

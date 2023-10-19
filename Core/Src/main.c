@@ -304,9 +304,9 @@ static void MX_LPUART1_UART_Init(void)
   hlpuart1.Init.StopBits = UART_STOPBITS_1;
   hlpuart1.Init.Parity = UART_PARITY_NONE;
   hlpuart1.Init.Mode = UART_MODE_TX_RX;
-  hlpuart1.Init.HwFlowCtl = UART_HWCONTROL_RTS_CTS;
+  hlpuart1.Init.HwFlowCtl = UART_HWCONTROL_RTS;
   hlpuart1.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
-  hlpuart1.Init.ClockPrescaler = UART_PRESCALER_DIV1;
+  hlpuart1.Init.ClockPrescaler = UART_PRESCALER_DIV4;
   hlpuart1.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
   hlpuart1.FifoMode = UART_FIFOMODE_DISABLE;
   if (HAL_UART_Init(&hlpuart1) != HAL_OK)
@@ -529,47 +529,9 @@ void ToggleTask(void *argument)
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
-#if TX
-	RadioCommand radioCommand = {0};
-  uint8_t sendBlink = SOLAR_TRUE;
-	uint16_t ID = 1;
-#elif RX
-  RadioData radioData = {0};
-#endif
   /* Infinite loop */
   for(;;)
   {
-#if TX
-    radioCommand.size = 3;
-    radioCommand.command = TRANSMIT;
-    radioCommand.data = solarMalloc(3);
-    memcpy(radioCommand.data, &ID, 2);
-    if(HAL_GPIO_ReadPin(BUTTON1_GPIO_Port, BUTTON1_Pin)) {
-        radioCommand.data[3] = 1;
-    } else {
-        radioCommand.data[3] = 0;
-    }
-
-    if(sendBlink){
-      osStatus_t ret = osMessageQueuePut(radioCommandQueue, &radioCommand, 0, 1000);
-      if(ret != osOK) {
-        solarFree(radioCommand.data);
-      } else {
-        ID++;
-      }
-    }
-
-    osMessageQueueGet(toggleCommandQueue, &sendBlink, 0, 0);
-    osDelay(100);
-#elif RX
-    osMessageQueueGet(radioDataQueue, &radioData, NULL, osWaitForever);
-    solarPrint("ID: %d", radioData.ID);
-    if(radioData.data[0] == 1) {
-        HAL_GPIO_WritePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin, GPIO_PIN_SET);
-    } else {
-        HAL_GPIO_WritePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin, GPIO_PIN_RESET);
-    }
-#endif
   }
   /* USER CODE END 5 */
 }
