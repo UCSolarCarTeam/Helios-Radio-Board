@@ -103,7 +103,6 @@ void RadioInit()
 
     //LORA packet type
     uint8_t packetType[] = {0x01};
-
     size = 1;
     RadioSetCommand(RADIO_SET_PACKETTYPE, packetType, size);
 
@@ -173,7 +172,7 @@ void RadioSetupTX()
 
     //22db power, 800 μs ramp time. not sure how ramp up time affects performance, must research
     size = 2;
-    RadioSetCommand(RADIO_SET_TXPARAMS, &(radioConfig[PA_DUTY_CYCLE]), size);
+    RadioSetCommand(RADIO_SET_TXPARAMS, &(radioConfig[POWER]), size);
 
     //enable RX done, TX done, and RX/TX timeout interrupts on IRQ line 1 (from my understanding, an IRQ line can only halt processor once at a time)
     uint8_t dioIRQConfig[] = {0x02, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}; 
