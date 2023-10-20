@@ -274,8 +274,10 @@ void RadioReceive() {
     RadioData radioData = {0};
     radioData.size = bufferStatus[0] - 2; //minus two cause 2 of those are from ID
     memcpy(&(radioData.ID), data, 2);
-    memcpy(&(radioData.data), &(data[2]), radioData.size);
-    osMessageQueuePut(radioDataQueue, &radioData, 0, osWaitForever);
+    if(radioData.size > 0 && radioData.size <=8) {
+        memcpy(&(radioData.data), &(data[2]), radioData.size);
+    }
+    osMessageQueuePut(radioDataQueue, &radioData, 0, 10);
 }
 #endif
 

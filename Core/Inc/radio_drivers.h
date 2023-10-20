@@ -37,8 +37,8 @@ typedef enum RadioConfig {
     //Packet parameters command
     PREAMBLE_SYMBOLS_MSB = 0,
     PREAMBLE_SYMBOLS_LSB,
-    PAYLOAD_LENGTH,
     HEADER_TYPE,
+    PAYLOAD_LENGTH,
     CRC_ENABLE,
     INVERT_IQ,
 
