@@ -107,10 +107,11 @@ void RadioInit()
     size = 1;
     RadioSetCommand(RADIO_SET_PACKETTYPE, packetType, size);
 
+    size = 6;
     // 12 preamble symbols, explicit header (variable size), size (overwritten), CRC disabled, standard IQ setup (no idea)
     RadioSetCommand(RADIO_SET_PACKETPARAMS, &(radioConfig[PREAMBLE_SYMBOLS_MSB]), size);
-    size = 6;
 
+    size = 1;
     //sync conf, not sure what these are so all disabled
     address = 0x6AC;
     RadioWriteRegisters(address, &(radioConfig[GBSYNCR]), size);
