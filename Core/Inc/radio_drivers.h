@@ -23,10 +23,7 @@
 #define TXADDRESS 0x00
 #define RXADDRESS 0x08
 
-#define LORA 1
-#define FSK !LORA
-
-#define TX 1
+#define TX 0
 #define RX !TX
 
 #if TX
@@ -36,55 +33,50 @@
 #define RADIO_RECEIVE_INTERRUPT_QUEUE_COUNT 16
 #define RADIO_DATA_QUEUE_COUNT 16
 
-typedef struct RadioConfig {
+typedef enum RadioConfig {
     //Packet parameters command
-    uint8_t preambleSymbols;
-    uint8_t payloadLength;
-#if LORA
-    uint8_t headerType;
-    uint8_t CRCenable;
-    uint8_t invertIQ;
+    PREAMBLE_SYMBOLS_MSB = 0,
+    PREAMBLE_SYMBOLS_LSB,
+    PAYLOAD_LENGTH,
+    HEADER_TYPE,
+    CRC_ENABLE,
+    INVERT_IQ,
 
     //Modulation parameters command
-    uint8_t spreadingFactor;
-    uint8_t bandwith;
-    uint8_t cr;
-    uint8_t ldrOptimization;
+    SPREADING_FACTOR,
+    BANDWITH,
+    CR,
+    LDR_OPTIMIZATION,
 
-#elif FSK
-    uint8_t preambleDetection;
-    uint8_t syncWordLength;
-    uint8_t addressComparison;
-    uint8_t packetType;
-    uint8_t CRC;
-    uint8_t whitening;
-#endif
     //Frequency command
-    uint32_t frequency;
+    //FREQUENCY
 
     //SMPS register value
-    uint8_t SMPSEenable;
+    SMPS_ENABLE,
 
     //Regulator Mode command
-    uint8_t regulatorMode;
+    REGULATOR_MODE,
 
     //buffer address command
-    uint8_t TXaddress;
-    uint8_t RXaddress;
+    TX_ADDRESS,
+    RX_ADDRESS,
 
     //Tx Parameters command
-    uint8_t power;
-    uint8_t rampTime;
+    POWER,
+    RAMP_TIME,
 
     //Pa Config command
-    uint8_t paDutyCycle;
-    uint8_t hpMax;
-    uint8_t paSel;
+    PA_DUTY_CYCLE,
+    HP_MAX,
+    PA_SEL,
 
     //synchronization config
-    uint8_t gbsyncr;
-    uint8_t lsyncrH;
-    uint8_t lsyncrL;
+    GBSYNCR,
+    LSYNCRH,
+    LSYNCRL,
+
+    //overall array size must be last!
+    SIZE 
 
 } RadioConfig;
 

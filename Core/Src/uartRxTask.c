@@ -20,7 +20,7 @@ uint8_t uartRxByteHandler(uint8_t* uartRxBuffer, uint8_t* uartRxBufferIndex, uin
       uartRxBuffer[(*uartRxBufferIndex)++] = '\0';
       uartRxMessageReady = SOLAR_TRUE;
   } 
-  else 
+  else
   {
       uartRxBuffer[(*uartRxBufferIndex)++] = newChar;
   }

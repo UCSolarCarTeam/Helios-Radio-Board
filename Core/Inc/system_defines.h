@@ -18,7 +18,7 @@
 #define SOLAR_TRUE 1
 #define SOLAR_FALSE 0
 
-#define UART_HANDLER &huart2
+#define UART_HANDLER &hlpuart1
 
 #define DEFAULT_TASK_STACK_SIZE 128 * 8
 
@@ -46,7 +46,8 @@ typedef enum RadioCommandType {
     RECEIVE = 7,
     STOP_RADIO = 8,
     START_RADIO = 9,
-    RESTART_RADIO = 10
+    RESTART_RADIO = 10,
+    OVERWRITE_PARAM = 11
 } RadioCommandType;
 
 typedef struct RadioCommand {

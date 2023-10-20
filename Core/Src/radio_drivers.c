@@ -7,85 +7,70 @@
 
 #include "radio_drivers.h"
 
-RadioConfig radioConfig = { .preambleSymbols = 0xC,
-                            .payloadLength = 8,
-                            .headerType = 0,
-                            .CRCenable = 0,
-                            .invertIQ = 0,
-                            .spreadingFactor = 8,
-                            .bandwith = 3,
-                            .cr = 1,
-                            .ldrOptimization = 0,
-                            .frequency = 915000000,
-                            .SMPSEenable = ((uint8_t) (1<<6)), //register value
-                            .regulatorMode = 1,
-                            .TXaddress = 0,
-                            .RXaddress = 8,
-                            .power = 0x16,
-                            .rampTime = 0x05,
-                            .paDutyCycle = 0x04,
-                            .hpMax = 0x07,
-                            .paSel = 0,
-                            .gbsyncr = 0,   //register value
-                            .lsyncrH = 0xA5, //register value
-                            .lsyncrL = 0xA5 //register value
-                            };
+uint32_t frequency = 915000000; 
+uint8_t radioConfig[] = { 0x0,  //preamble symbols MSB
+                          0xC,  //preamble symbols LSB
+                          0,    //header type
+                          8,    //payload length (to be rewritten)
+                          0,    //crc enable
+                          0,    //invert iq
+                          8,    //spreading factor
+                          3,    //bandwith
+                          1,    //cr
+                          0,    //ldr optimization
+                          ((uint8_t) (1<<6)), //SMPS_ENABLE, register value
+                          1,    //regulator mode
+                          0,    //TX buffer start address
+                          8,    //RX buffer start address
+                          0x16, //power 
+                          0x05, //ramp time
+                          0x04, //pa duty cycle
+                          0x07, //hp max
+                          0,    //pa sel
+                          0,    //GBSYNCR register value
+                          0xA5, //LSYNCRH register value
+                          0xA5  //LSYNCRL register value
+                          };
 
 //TODO: There must be a nicer way to have Mutexes or change SUBGHZ_Handle name be used or unused with a single macro (perhaps macro function declaration)
 void RadioSetCommand(SUBGHZ_RadioSetCmd_t Command, uint8_t *pBuffer, uint16_t Size) {
-    //if(osMutexWait(SUBGHZMutexHandle, 0) == osOK)
     {
         HAL_SUBGHZ_ExecSetCmd(&hsubghz, Command, pBuffer, Size);
-        //osMutexRelease(SUBGHZMutexHandle);
     }
 }
 void RadioGetCommand(SUBGHZ_RadioGetCmd_t Command, uint8_t *pBuffer, uint16_t Size) {
-    //if(osMutexWait(SUBGHZMutexHandle, 0) == osOK)
     {
         HAL_SUBGHZ_ExecGetCmd(&hsubghz, Command, pBuffer, Size);
-        //osMutexRelease(SUBGHZMutexHandle);
     }
 }
 void RadioWriteBuffer(uint8_t Offset, uint8_t *pBuffer, uint16_t Size) {
-    //if(osMutexWait(SUBGHZMutexHandle, 0) == osOK)
     {
         HAL_SUBGHZ_WriteBuffer(&hsubghz, Offset, pBuffer, Size);
-        //osMutexRelease(SUBGHZMutexHandle);
     }
 }
 void RadioReadBuffer(uint8_t Offset, uint8_t *pBuffer, uint16_t Size) {
-    //if(osMutexWait(SUBGHZMutexHandle, 0) == osOK)
     {
         HAL_SUBGHZ_ReadBuffer(&hsubghz, Offset, pBuffer, Size);
-        //osMutexRelease(SUBGHZMutexHandle);
     }
 }
 void RadioWriteRegisters(uint16_t Address, uint8_t *pBuffer, uint16_t Size) {
-    //if(osMutexWait(SUBGHZMutexHandle, 0) == osOK)
     {
         HAL_SUBGHZ_WriteRegisters(&hsubghz, Address, pBuffer, Size);
-        //osMutexRelease(SUBGHZMutexHandle);
     }
 }
 void RadioReadRegisters(uint16_t Address, uint8_t *pBuffer, uint16_t Size) {
-    //if(osMutexWait(SUBGHZMutexHandle, 0) == osOK)
     {
         HAL_SUBGHZ_ReadRegisters(&hsubghz, Address, pBuffer, Size);
-        //osMutexRelease(SUBGHZMutexHandle);
     }
 }
 void RadioWriteRegister(uint16_t Address, uint8_t Value) {
-    //if(osMutexWait(SUBGHZMutexHandle, 0) == osOK)
     {
         HAL_SUBGHZ_WriteRegister(&hsubghz, Address, Value);
-        //osMutexRelease(SUBGHZMutexHandle);
     }
 }
 void RadioReadRegister(uint16_t Address, uint8_t *pValue) {
-    //if(osMutexWait(SUBGHZMutexHandle, 0) == osOK)
     {
         HAL_SUBGHZ_ReadRegister(&hsubghz, Address, pValue);
-        //osMutexRelease(SUBGHZMutexHandle);
     }
 }
 
@@ -101,63 +86,44 @@ void RadioInit()
     osDelay(1);
 
     //enable SMPS clock detection, to use external TCXO
-    uint8_t SMPSC0R[] = {radioConfig.SMPSEenable};
     uint16_t address = SUBGHZ_SMPSC0R;
     uint16_t size = 1;
-    RadioWriteRegisters(SUBGHZ_SMPSC0R, SMPSC0R, size);
+    RadioWriteRegisters(SUBGHZ_SMPSC0R, &(radioConfig[SMPS_ENABLE]), size);
 
     //SMPS mode used
-    uint8_t regulator_mode[] = {radioConfig.regulatorMode};
-    RadioSetCommand(RADIO_SET_REGULATORMODE, regulator_mode, size);
+    RadioSetCommand(RADIO_SET_REGULATORMODE, &(radioConfig[REGULATOR_MODE]), size);
 
     //set standby with RC13 clock
     uint8_t standbyCfg[] = {0x00};
     RadioSetCommand(RADIO_SET_STANDBY, standbyCfg, size);
 
     //set address for relevant buffers
-    uint8_t bufferBaseAddress[] = {radioConfig.TXaddress, radioConfig.RXaddress};
     size = 2;
-    RadioSetCommand(RADIO_SET_BUFFERBASEADDRESS, bufferBaseAddress, size);
+    RadioSetCommand(RADIO_SET_BUFFERBASEADDRESS, &(radioConfig[TX_ADDRESS]), size);
 
-#if LORA
     //LORA packet type
     uint8_t packetType[] = {0x01};
-#elif FSK
-    //FSK packet type
-    uint8_t packetType[] = {0x00};
-#endif
     size = 1;
     RadioSetCommand(RADIO_SET_PACKETTYPE, packetType, size);
 
-#if LORA
-    // 12 preamble symbols, explicit header (variable size), size (overwritten), CRC disabled, standard IQ setup (no idea)
-    uint8_t packetParameters[] = {radioConfig.preambleSymbols >> 8, radioConfig.payloadLength & 0xFF, radioConfig.headerType, radioConfig.CRCenable, radioConfig.invertIQ};
     size = 6;
-#elif FSK
-    //12 preamble symbols, preamble detection disabled, 8 bit sync word,addres comparison/filtering disabled, fixed payload, payload_length (overwritten), CRC disabled, whitening disabled
-    uint8_t packetParameters[] = {0x00, 0x0C, 0x00, 0x08, 0x00, 0x00, 0x02, 0x00, 0x00};
-    size = 9;
-#endif
-    RadioSetCommand(RADIO_SET_PACKETPARAMS, packetParameters, size);
+    // 12 preamble symbols, explicit header (variable size), size (overwritten), CRC disabled, standard IQ setup (no idea)
+    RadioSetCommand(RADIO_SET_PACKETPARAMS, &(radioConfig[PREAMBLE_SYMBOLS_MSB]), size);
 
-#if LORA
+    size = 1;
     //sync conf, not sure what these are so all disabled
-    uint8_t GBSYNCR[] = {radioConfig.gbsyncr};
     address = 0x6AC;
-    RadioWriteRegisters(address, GBSYNCR, size);
+    RadioWriteRegisters(address, &(radioConfig[GBSYNCR]), size);
 
     //sync words (must the same on receiver and transmitter)
-    uint8_t LSYNCRH[] = {radioConfig.lsyncrH};
     address = 0x740;
-    RadioWriteRegisters(address, LSYNCRH, size);
+    RadioWriteRegisters(address, &(radioConfig[LSYNCRH]), size);
 
-    uint8_t LSYNCRL[] = {radioConfig.lsyncrL};
     address = 0x741;
-    RadioWriteRegisters(address, LSYNCRL, size);
-#endif
+    RadioWriteRegisters(address, &(radioConfig[LSYNCRL]), size);
 
     //used to set frequency, copied from stm32wl code package
-    uint32_t channel = (uint32_t) ((((uint64_t) radioConfig.frequency)<<25)/(XTAL_FREQ) );
+    uint32_t channel = (uint32_t) ((((uint64_t) frequency)<<25)/(XTAL_FREQ) );
     uint8_t RFfreq[4];
     RFfreq[0] = ( uint8_t )( ( channel >> 24 ) & 0xFF );
     RFfreq[1] = ( uint8_t )( ( channel >> 16 ) & 0xFF );
@@ -166,15 +132,9 @@ void RadioInit()
     size = 4;
     RadioSetCommand(RADIO_SET_RFFREQUENCY, RFfreq, size);
 
-#if LORA
     //SF of 8, BW of 62.5, CR 4/5
-    uint8_t modulationParamaters[] = {radioConfig.spreadingFactor, radioConfig.bandwith, radioConfig.cr, radioConfig.ldrOptimization};
     size = 4;
-#elif FSK
-    uint8_t data8[] = {0x01, 0x90, 0x00, 0x00, 0x0B, 0x00, 0x00, 0xD2};
-    uint16_t size10 = 8;
-#endif
-    RadioSetCommand(RADIO_SET_MODULATIONPARAMS, modulationParamaters, size);
+    RadioSetCommand(RADIO_SET_MODULATIONPARAMS, &(radioConfig[SPREADING_FACTOR]), size);
 
     //Clear up data buffer in radio module (unnecessary, but used for debugging)
     uint8_t zero_buffer[256];
@@ -206,14 +166,13 @@ void RadioSetupTX()
     osDelay(1);
 
     // HP PA mode, HP PA max power, last byte must be 0x01 according to datasheet
-    uint8_t paConfig[] = {radioConfig.paDutyCycle, radioConfig.hpMax, radioConfig.paSel, 0x01};
+    uint8_t paConfig[] = {radioConfig[PA_DUTY_CYCLE], radioConfig[HP_MAX], radioConfig[PA_SEL], 0x01};
     uint16_t size = 4;
     RadioSetCommand(RADIO_SET_PACONFIG, paConfig, size);
 
     //22db power, 800 μs ramp time. not sure how ramp up time affects performance, must research
-    uint8_t txParameters[] = {radioConfig.power, radioConfig.rampTime};
     size = 2;
-    RadioSetCommand(RADIO_SET_TXPARAMS, txParameters, size);
+    RadioSetCommand(RADIO_SET_TXPARAMS, &(radioConfig[POWER]), size);
 
     //enable RX done, TX done, and RX/TX timeout interrupts on IRQ line 1 (from my understanding, an IRQ line can only halt processor once at a time)
     uint8_t dioIRQConfig[] = {0x02, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}; 
@@ -241,20 +200,14 @@ void RadioSendTXContinuousWave() {
 int RadioTransmit(uint8_t* data, uint8_t size)
 {
     //Check if packet fits in the current TX buffer size
-    if(size <= radioConfig.RXaddress - radioConfig.TXaddress)  {
-      RadioWriteBuffer(radioConfig.TXaddress, data, size);
-#if LORA
-    // 12 preamble symbols, explicit header (variable size), size (overwritten), CRC disabled, standard IQ setup (no idea)
-    uint8_t packetParameters[] = {radioConfig.preambleSymbols >> 8, radioConfig.preambleSymbols & 0xFF, radioConfig.headerType, size, radioConfig.CRCenable, radioConfig.invertIQ};
-    uint8_t commandSize = 6;
-#elif FSK
-    //12 preamble symbols, preamble detection disabled, 8 bit sync word,addres comparison/filtering disabled, fixed payload, payload_length (overwritten), CRC disabled, whitening disabled
-    uint8_t packetParameters[] = {0x00, 0x0C, 0x00, 0x08, 0x00, 0x00, 0x02, 0x00, 0x00};
-    uint8_t commandSize = 9;
-#endif
-      RadioSetCommand(RADIO_SET_PACKETPARAMS, packetParameters, commandSize);
-    }
-    else {
+    if(size <= radioConfig[RX_ADDRESS] - radioConfig[TX_ADDRESS])  {
+        RadioWriteBuffer(radioConfig[TX_ADDRESS], data, size);
+        // 12 preamble symbols, explicit header (variable size), size (overwritten), CRC disabled, standard IQ setup (no idea)
+        radioConfig[PAYLOAD_LENGTH] = size;
+        uint8_t commandSize = 6;
+
+        RadioSetCommand(RADIO_SET_PACKETPARAMS, &(radioConfig[PREAMBLE_SYMBOLS_MSB]), commandSize);
+    } else {
       return SOLAR_FALSE;
     }
 
@@ -262,11 +215,12 @@ int RadioTransmit(uint8_t* data, uint8_t size)
     uint8_t timeout[] = {0x00, 0x00, 0x00}; 
     RadioSetCommand(RADIO_SET_TX, timeout, 3);
 
-    //Add handle of failed TX (blink the blue LED if so)
+    //Add handle of failed TX ()
     uint8_t status;
     RadioGetCommand(RADIO_GET_STATUS, &status, 1);
     while((status & 0b01110000) == 0b01100000)
         RadioGetCommand(RADIO_GET_STATUS, &status, 1);
+        
     if((status & 0b00001110) == 0b00001100) {
         solarPrint("blinky blink %d\n", data[0]);
         HAL_GPIO_TogglePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin);
@@ -326,8 +280,10 @@ void RadioReceive() {
     RadioData radioData = {0};
     radioData.size = bufferStatus[0] - 2; //minus two cause 2 of those are from ID
     memcpy(&(radioData.ID), data, 2);
-    memcpy(&(radioData.data), &(data[2]), radioData.size);
-    osMessageQueuePut(radioDataQueue, &radioData, 0, osWaitForever);
+    if(radioData.size > 0 && radioData.size <= 8){
+    	memcpy(&(radioData.data), &(data[2]), radioData.size);
+    }
+    osMessageQueuePut(radioDataQueue, &radioData, 0, 10);
 }
 #endif
 
@@ -417,6 +373,7 @@ void RadioLoop()
     if(ret == osOK) {
     	radioHandleCommand(&radioCommand);
     }
+    //RadioReceive();
 }
 
 /**
