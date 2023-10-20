@@ -414,9 +414,17 @@ static void MX_GPIO_Init(void)
 void ToggleTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
+  RadioData radioData = {0};
   /* Infinite loop */
   for(;;)
   {
+    osMessageQueueGet(radioDataQueue, &radioData, NULL, osWaitForever);
+    solarPrint("ID: %d, data:", radioData.ID);
+    for(int i = 0; i < radioData.size; i++) {
+      solarPrint(" %d,", radioData.data[i]);
+    }
+    solarPrint("\n");
+    HAL_GPIO_TogglePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin);
   }
   /* USER CODE END 5 */
 }
@@ -432,48 +440,9 @@ void ToggleTask(void *argument)
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
-#if TX
-	RadioCommand radioCommand = {0};
-  uint8_t sendBlink = SOLAR_TRUE;
-	uint16_t ID = 1;
-#elif RX
-  RadioData radioData = {0};
-#endif
   /* Infinite loop */
   for(;;)
   {
-#if TX
-    radioCommand.size = 3;
-    radioCommand.command = TRANSMIT;
-    radioCommand.data = solarMalloc(3);
-    memcpy(radioCommand.data, &ID, 2);
-    if(HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin)) {
-        radioCommand.data[3] = 1;
-    } else {
-        radioCommand.data[3] = 0;
-    }
-
-    if(sendBlink){
-      osStatus_t ret = osMessageQueuePut(radioCommandQueue, &radioCommand, 0, 1000);
-      if(ret != osOK) {
-        solarFree(radioCommand.data);
-      } else {
-        ID++;
-      }
-    }
-
-    osMessageQueueGet(toggleCommandQueue, &sendBlink, 0, 0);
-    osDelay(100);
-#elif RX
-    solarPrint("test");
-    osMessageQueueGet(radioDataQueue, &radioData, NULL, osWaitForever);
-    solarPrint("ID: %d", radioData.ID);
-    if(radioData.data[0] == 1) {
-        HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_SET);
-    } else {
-        HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_RESET);
-    }
-#endif
   }
   /* USER CODE END 5 */
 }

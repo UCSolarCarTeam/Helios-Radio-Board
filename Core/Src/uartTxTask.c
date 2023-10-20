@@ -12,7 +12,7 @@ void UartTxTask(void *argument)
   {
     UartTxData uartTxData = {0};
     osMessageQueueGet(uartTxQueue, &uartTxData, 0, osWaitForever);
-    if (HAL_UART_Transmit(UART_HANDLER, uartTxData.data, uartTxData.size, 100000) != HAL_OK){
+    if (HAL_UART_Transmit(UART_HANDLER, uartTxData.data, uartTxData.size, 1000) != HAL_OK){
       //add error handler
     };
     solarFree(uartTxData.data);
