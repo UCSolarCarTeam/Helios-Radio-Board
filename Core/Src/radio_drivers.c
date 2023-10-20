@@ -10,8 +10,8 @@
 uint32_t frequency = 915000000; 
 uint8_t radioConfig[] = { 0x0,  //preamble symbols MSB
                           0xC,  //preamble symbols LSB
-                          8,    //payload length (to be rewritten)
                           0,    //header type
+                          8,    //payload length (to be rewritten)
                           0,    //crc enable
                           0,    //invert iq
                           8,    //spreading factor
@@ -101,27 +101,16 @@ void RadioInit()
     size = 2;
     RadioSetCommand(RADIO_SET_BUFFERBASEADDRESS, &(radioConfig[TX_ADDRESS]), size);
 
-#if LORA
     //LORA packet type
     uint8_t packetType[] = {0x01};
-#elif FSK
-    //FSK packet type
-    uint8_t packetType[] = {0x00};
-#endif
+
     size = 1;
     RadioSetCommand(RADIO_SET_PACKETTYPE, packetType, size);
 
-#if LORA
     // 12 preamble symbols, explicit header (variable size), size (overwritten), CRC disabled, standard IQ setup (no idea)
     RadioSetCommand(RADIO_SET_PACKETPARAMS, &(radioConfig[PREAMBLE_SYMBOLS_MSB]), size);
     size = 6;
-#elif FSK
-    //12 preamble symbols, preamble detection disabled, 8 bit sync word,addres comparison/filtering disabled, fixed payload, payload_length (overwritten), CRC disabled, whitening disabled
-    uint8_t packetParameters[] = {0x00, 0x0C, 0x00, 0x08, 0x00, 0x00, 0x02, 0x00, 0x00};
-    size = 9;
-#endif
 
-#if LORA
     //sync conf, not sure what these are so all disabled
     address = 0x6AC;
     RadioWriteRegisters(address, &(radioConfig[GBSYNCR]), size);
@@ -132,7 +121,6 @@ void RadioInit()
 
     address = 0x741;
     RadioWriteRegisters(address, &(radioConfig[LSYNCRL]), size);
-#endif
 
     //used to set frequency, copied from stm32wl code package
     uint32_t channel = (uint32_t) ((((uint64_t) frequency)<<25)/(XTAL_FREQ) );
@@ -144,14 +132,9 @@ void RadioInit()
     size = 4;
     RadioSetCommand(RADIO_SET_RFFREQUENCY, RFfreq, size);
 
-#if LORA
     //SF of 8, BW of 62.5, CR 4/5
     size = 4;
     RadioSetCommand(RADIO_SET_MODULATIONPARAMS, &(radioConfig[SPREADING_FACTOR]), size);
-#elif FSK
-    uint8_t data8[] = {0x01, 0x90, 0x00, 0x00, 0x0B, 0x00, 0x00, 0xD2};
-    uint16_t size10 = 8;
-#endif
 
     //Clear up data buffer in radio module (unnecessary, but used for debugging)
     uint8_t zero_buffer[256];
@@ -214,19 +197,13 @@ int RadioTransmit(uint8_t* data, uint8_t size)
 {
     //Check if packet fits in the current TX buffer size
     if(size <= radioConfig[RX_ADDRESS] - radioConfig[TX_ADDRESS])  {
-      RadioWriteBuffer(radioConfig[TX_ADDRESS], data, size);
-#if LORA
-    // 12 preamble symbols, explicit header (variable size), size (overwritten), CRC disabled, standard IQ setup (no idea)
-    radioConfig[PAYLOAD_LENGTH] = size;
-    uint8_t commandSize = 6;
-#elif FSK
-    //12 preamble symbols, preamble detection disabled, 8 bit sync word,addres comparison/filtering disabled, fixed payload, payload_length (overwritten), CRC disabled, whitening disabled
-    uint8_t packetParameters[] = {0x00, 0x0C, 0x00, 0x08, 0x00, 0x00, 0x02, 0x00, 0x00};
-    uint8_t commandSize = 9;
-#endif
-      RadioSetCommand(RADIO_SET_PACKETPARAMS, &(radioConfig[PREAMBLE_SYMBOLS_MSB]), commandSize);
-    }
-    else {
+        RadioWriteBuffer(radioConfig[TX_ADDRESS], data, size);
+        // 12 preamble symbols, explicit header (variable size), size (overwritten), CRC disabled, standard IQ setup (no idea)
+        radioConfig[PAYLOAD_LENGTH] = size;
+        uint8_t commandSize = 6;
+
+        RadioSetCommand(RADIO_SET_PACKETPARAMS, &(radioConfig[PREAMBLE_SYMBOLS_MSB]), commandSize);
+    } else {
       return SOLAR_FALSE;
     }
 

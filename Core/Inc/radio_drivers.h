@@ -23,9 +23,6 @@
 #define TXADDRESS 0x00
 #define RXADDRESS 0x08
 
-#define LORA 1
-#define FSK !LORA
-
 #define TX 1
 #define RX !TX
 
@@ -41,7 +38,6 @@ typedef enum RadioConfig {
     PREAMBLE_SYMBOLS_MSB = 0,
     PREAMBLE_SYMBOLS_LSB,
     PAYLOAD_LENGTH,
-#if LORA
     HEADER_TYPE,
     CRC_ENABLE,
     INVERT_IQ,
@@ -52,16 +48,8 @@ typedef enum RadioConfig {
     CR,
     LDR_OPTIMIZATION,
 
-#elif FSK
-    PREAMBLE_SELECTION,
-    SYNC_WORD_LENGTH,
-    ADDRESS_COMPARISON,
-    PACKET_TYPE,
-    CRC,
-    WHITENING,
-#endif
     //Frequency command
-    //FREQUENCY,
+    //FREQUENCY
 
     //SMPS register value
     SMPS_ENABLE,
