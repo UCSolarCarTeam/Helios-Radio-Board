@@ -22,6 +22,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "CAN.h"
 #include "radio_drivers.h"
 #include "system_defines.h"
 #include "uartRxTask.h"
@@ -36,6 +37,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define CAN_INTERRUPT_QUEUE_COUNT 5 // anticipate 2 sudden messages + 1 for extra room
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -48,6 +50,8 @@ UART_HandleTypeDef hlpuart1;
 SPI_HandleTypeDef hspi1;
 
 SUBGHZ_HandleTypeDef hsubghz;
+
+uint8_t canReceive = 0;
 
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
@@ -97,10 +101,18 @@ const osThreadAttr_t debugTask_attributes = {
   .stack_size = DEFAULT_TASK_STACK_SIZE
 };
 
+/* Definitions for CANRXInterruptTask */
+osThreadId_t CANRXInterruptTaskHandle;
+const osThreadAttr_t CANRXInterruptTask_attributes = {
+  .name = "CANRXInterruptTask",
+  .priority = (osPriority_t) osPriorityNormal1,
+  .stack_size = DEFAULT_TASK_STACK_SIZE
+};
+
 /* Definitions for SPIMutex */
-osMutexId_t SUBGHZMutexHandle;
-const osMutexAttr_t SUBGHZMutex_attributes = {
-  .name = "SUBGHZMutex"
+osMutexId_t SPIMutexHandle;
+const osMutexAttr_t SPIMutex_attributes = {
+  .name = "SPIMutex"
 };
 
 /* Definitions for VA_LIST mutex */
@@ -109,6 +121,7 @@ const osMutexAttr_t vaListMutex_attributes = {
   .name = "vaListMutexHandle"
 };
 
+osMessageQueueId_t CANInterruptQueue;
 osMessageQueueId_t radioCommandQueue;
 osMessageQueueId_t uartTxQueue;
 osMessageQueueId_t uartRxQueue;
@@ -170,13 +183,14 @@ int main(void)
   MX_SUBGHZ_Init();
   /* USER CODE BEGIN 2 */
   RadioInit();
+  ConfigureCANSPI();
   /* USER CODE END 2 */
 
   /* Init scheduler */
   osKernelInitialize();
 
   /* USER CODE BEGIN RTOS_MUTEX */
-  //SUBGHZMutexHandle = osMutexNew(&SUBGHZMutex_attributes); //unused
+  SPIMutexHandle = osMutexNew(&SPIMutex_attributes); //unused
   vaListMutexHandle = osMutexNew(&vaListMutex_attributes);
   /* USER CODE END RTOS_MUTEX */
 
@@ -188,6 +202,7 @@ int main(void)
   /* USER CODE END RTOS_TIMERS */
 
   /* USER CODE BEGIN RTOS_QUEUES */
+  CANInterruptQueue = osMessageQueueNew(CAN_INTERRUPT_QUEUE_COUNT, sizeof(uint16_t), NULL);
   radioDataQueue = osMessageQueueNew(RADIO_DATA_QUEUE_COUNT, sizeof(RadioData), NULL);
   radioCommandQueue = osMessageQueueNew(UART_RX_DATA_QUEUE_COUNT, sizeof(RadioCommand), NULL);
   uartTxQueue = osMessageQueueNew(UART_TX_DATA_QUEUE_COUNT, sizeof(UartTxData), NULL);
@@ -215,6 +230,8 @@ int main(void)
   uartTxTaskHandle = osThreadNew(UartTxTask, NULL, &uartTxTask_attributes);
   /* creation of debugTask*/
   debugTaskHandle = osThreadNew(DebugTask, NULL, &debugTask_attributes);
+  /* creation of CANRXInterruptTask*/
+  CANRXInterruptTaskHandle = osThreadNew(CANRXInterruptTask, NULL, &CANRXInterruptTask_attributes);
 
   /* USER CODE END RTOS_THREADS */
 
@@ -350,17 +367,17 @@ static void MX_SPI1_Init(void)
   hspi1.Instance = SPI1;
   hspi1.Init.Mode = SPI_MODE_MASTER;
   hspi1.Init.Direction = SPI_DIRECTION_2LINES;
-  hspi1.Init.DataSize = SPI_DATASIZE_4BIT;
-  hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
-  hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
+  hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
+  hspi1.Init.CLKPolarity = SPI_POLARITY_HIGH;
+  hspi1.Init.CLKPhase = SPI_PHASE_2EDGE;
   hspi1.Init.NSS = SPI_NSS_SOFT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
   hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
   hspi1.Init.CRCPolynomial = 7;
   hspi1.Init.CRCLength = SPI_CRC_LENGTH_DATASIZE;
-  hspi1.Init.NSSPMode = SPI_NSS_PULSE_ENABLE;
+  hspi1.Init.NSSPMode = SPI_NSS_PULSE_DISABLE;
   if (HAL_SPI_Init(&hspi1) != HAL_OK)
   {
     Error_Handler();
@@ -517,6 +534,13 @@ void ToggleTask(void *argument)
   }
   /* USER CODE END 5 */
 }
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+	//osMessageQueuePut(CANInterruptQueue, &GPIO_Pin, 0, 0);
+  canReceive = 1;
+}
+/* USER CODE END 4 */
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -529,9 +553,47 @@ void ToggleTask(void *argument)
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
+#if TX
+	RadioCommand radioCommand = {0};
+  uint8_t sendBlink = SOLAR_TRUE;
+	uint16_t ID = 1;
+#elif RX
+  RadioData radioData = {0};
+#endif
   /* Infinite loop */
   for(;;)
   {
+#if TX
+    radioCommand.size = 3;
+    radioCommand.command = TRANSMIT;
+    radioCommand.data = solarMalloc(3);
+    memcpy(radioCommand.data, &ID, 2);
+    if(HAL_GPIO_ReadPin(BUTTON1_GPIO_Port, BUTTON1_Pin)) {
+        radioCommand.data[3] = 1;
+    } else {
+        radioCommand.data[3] = 0;
+    }
+
+    if(sendBlink){
+      osStatus_t ret = osMessageQueuePut(radioCommandQueue, &radioCommand, 0, 1000);
+      if(ret != osOK) {
+        solarFree(radioCommand.data);
+      } else {
+        ID++;
+      }
+    }
+
+    osMessageQueueGet(toggleCommandQueue, &sendBlink, 0, 0);
+    osDelay(100);
+#elif RX
+    osMessageQueueGet(radioDataQueue, &radioData, NULL, osWaitForever);
+    solarPrint("ID: %d", radioData.ID);
+    if(radioData.data[0] == 1) {
+        HAL_GPIO_WritePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin, GPIO_PIN_SET);
+    } else {
+        HAL_GPIO_WritePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin, GPIO_PIN_RESET);
+    }
+#endif
   }
   /* USER CODE END 5 */
 }
