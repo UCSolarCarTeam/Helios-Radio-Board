@@ -18,7 +18,7 @@ uint8_t radioConfig[] = { 0x0,  //preamble symbols MSB
                           3,    //bandwith
                           1,    //cr
                           0,    //ldr optimization
-                          ((uint8_t) (1<<6)), //SMPS_ENABLE, register value
+         ((uint8_t) (1<<6)),     //SMPS_ENABLE, register value
                           1,    //regulator mode
                           0,    //TX buffer start address
                           8,    //RX buffer start address
@@ -32,7 +32,6 @@ uint8_t radioConfig[] = { 0x0,  //preamble symbols MSB
                           0xA5  //LSYNCRL register value
                           };
 
-//TODO: There must be a nicer way to have Mutexes or change SUBGHZ_Handle name be used or unused with a single macro (perhaps macro function declaration)
 void RadioSetCommand(SUBGHZ_RadioSetCmd_t Command, uint8_t *pBuffer, uint16_t Size) {
     {
         HAL_SUBGHZ_ExecSetCmd(&hsubghz, Command, pBuffer, Size);
@@ -246,7 +245,6 @@ void RadioSetupRX()
     RadioSetCommand(RADIO_SET_RX, timeout, 3);
 }
 
-//TODO: use semaphore instead, for the future
 void HAL_SUBGHZ_RxCpltCallback(SUBGHZ_HandleTypeDef *hsubghz) {
     RadioCommand radioCommand = {0};
     radioCommand.command = RECEIVE;
