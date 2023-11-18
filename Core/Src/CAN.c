@@ -67,7 +67,7 @@ void CAN_IC_WRITE_REGISTER(uint8_t address, uint8_t value)
 void ConfigureCANSPI(void)
 {
 	uint8_t resetCommand = 0xa0; //instruction to reset IC to default
-	uint8_t CNF1 = 0x00; //BRP = 0 to make tq = 250ns and a SJW of 1Tq
+	uint8_t CNF1 = 0x01; //BRP = 0 to make tq = 250ns and a SJW of 1Tq
 	uint8_t CNF2 = 0xd8; //PRSEG = 0, PHSEG1 = 3, SAM = 0, BTLMODE = 1
 	uint8_t CNF3 = 0x01; //WAFKIL disabled, PHSEG2 = 2 (BTL enabled) but PHSEG = 1 makes it backwards compatible???? wat
 
@@ -205,7 +205,7 @@ void receiveCANMessage(uint8_t channel, uint32_t* ID, uint8_t* DLC, uint8_t* dat
 
 	*DLC = RXBDLC & 0x0f;
 	if(*DLC > 8){
-		*DLC = 8;
+		*DLC = 0;
 	}
 
 	uint8_t initialDataBufferAddress = initialBufferAddress + 6;
@@ -214,7 +214,7 @@ void receiveCANMessage(uint8_t channel, uint32_t* ID, uint8_t* DLC, uint8_t* dat
 		CAN_IC_READ_REGISTER(initialDataBufferAddress + i, (data++)); //read from relevant data registers
 	}
 
-	CAN_IC_WRITE_REGISTER_BITWISE(0x2c, 1 << channel, 0); //clear interrupts
+	CAN_IC_WRITE_REGISTER_BITWISE(0x2c, 0xff, 0); //clear interrupts
 
 	return;
 }
@@ -222,6 +222,7 @@ void receiveCANMessage(uint8_t channel, uint32_t* ID, uint8_t* DLC, uint8_t* dat
 void CANRXInterruptTask(void* arg)
 {
 	uint16_t GPIO_Pin = 0;
+	RadioCommand radioCommand = {0};
 	for(;;)
 	{
 		//osMessageQueueGet(CANInterruptQueue, &GPIO_Pin, 0, osWaitForever);
@@ -245,6 +246,18 @@ void CANRXInterruptTask(void* arg)
 				receiveCANMessage(1, &ID, &DLC, data);
 			}
 			osMutexRelease(SPIMutexHandle);
+
+			radioCommand.size = DLC;
+			radioCommand.command = TRANSMIT;
+			uint16_t lowerID = ID & 0xFFFF;
+			radioCommand.data = solarMalloc(DLC + 2);
+			memcpy(radioCommand.data, &lowerID, 2);
+			memcpy(&(radioCommand.data[2]), data, DLC);
+
+			osStatus_t ret = osMessageQueuePut(radioCommandQueue, &radioCommand, 0, 0);
+			if(ret != osOK) {
+				solarFree(radioCommand.data);
+			}
 		}
 	}
 }

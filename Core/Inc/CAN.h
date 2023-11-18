@@ -3,6 +3,8 @@
 #include "main.h"
 #include <stdint.h>
 #include "cmsis_os.h"
+#include "system_defines.h"
+#include "radio_drivers.h"
 
 void CAN_IC_READ_REGISTER(uint8_t address, uint8_t* buffer);
 void CAN_IC_WRITE_REGISTER_BITWISE(uint8_t address, uint8_t mask, uint8_t value);
