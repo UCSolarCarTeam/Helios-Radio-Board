@@ -32,6 +32,8 @@ uint8_t radioConfig[] = { 0x0,  //preamble symbols MSB
                           0xA5  //LSYNCRL register value
                           };
 
+uint8_t lastReadAddress = 0;
+
 void RadioSetCommand(SUBGHZ_RadioSetCmd_t Command, uint8_t *pBuffer, uint16_t Size) {
     {
         HAL_SUBGHZ_ExecSetCmd(&hsubghz, Command, pBuffer, Size);
@@ -194,11 +196,14 @@ void RadioSendTXContinuousWave() {
 
 int RadioTransmit(uint8_t* data, uint8_t size)
 {
+    //encode size of message in buffer
+    RadioWriteBuffer(radioConfig[TX_ADDRESS], &size, 1);
+
     //Check if packet fits in the current TX buffer size
     if(size <= radioConfig[RX_ADDRESS] - radioConfig[TX_ADDRESS])  {
-        RadioWriteBuffer(radioConfig[TX_ADDRESS], data, size);
+        RadioWriteBuffer(radioConfig[TX_ADDRESS] + 1, data, size);
         // 12 preamble symbols, explicit header (variable size), size (overwritten), CRC disabled, standard IQ setup (no idea)
-        radioConfig[PAYLOAD_LENGTH] = size;
+        radioConfig[PAYLOAD_LENGTH] = size + 1;
         uint8_t commandSize = 6;
 
         RadioSetCommand(RADIO_SET_PACKETPARAMS, &(radioConfig[PREAMBLE_SYMBOLS_MSB]), commandSize);
@@ -229,7 +234,6 @@ int RadioTransmit(uint8_t* data, uint8_t size)
 #elif RX
 void RadioSetupRX()
 {   
-
     uint8_t status;
 
     //enable RX done, TX done, and RX/TX timeout interrupts on IRQ line 1 (from my understanding, an IRQ line can only halt processor once at a time)
@@ -261,16 +265,21 @@ void RadioReceive() {
     RadioSetCommand(RADIO_CLR_IRQSTATUS, IRQClear, 2);
 
     //receive newest packet length and address
-    uint8_t bufferStatus[2];
-    RadioGetCommand(RADIO_GET_RXBUFFERSTATUS, bufferStatus, 2);
+    //uint8_t bufferStatus[2];
+    //RadioGetCommand(RADIO_GET_RXBUFFERSTATUS, bufferStatus, 2);
 
     //read newest packet from data buffer
+    uint8_t size = 0;
+    RadioReadBuffer(lastReadAddress++, &size, 1);
+
     uint8_t data[8];
-    RadioReadBuffer(bufferStatus[1], data, bufferStatus[0]);
+    RadioReadBuffer(lastReadAddress, data, size);
+
+    lastReadAddress += size;
 
     //throw it into the data queue
     RadioData radioData = {0};
-    radioData.size = bufferStatus[0] - 2; //minus two cause 2 of those are from ID
+    radioData.size = size - 2; //minus two cause 2 of those are from ID
     memcpy(&(radioData.ID), data, 2);
     if(radioData.size > 0 && radioData.size <=8) {
         memcpy(&(radioData.data), &(data[2]), radioData.size);
