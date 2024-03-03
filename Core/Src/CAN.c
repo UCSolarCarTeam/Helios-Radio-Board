@@ -1,45 +1,48 @@
 #include "CAN.h"
 
-//TODO ADD A FUNCTION THAT CHECKS FOR WHAT CHANNELS AVAILABLE FOR SENDING AND
-//A FUNCTION THAT CALLS THE ABOVE FUNCTION AND THE RELEVANT SENDCANMESSAGE FUNCTION
-//(extended vs regular CAN)
+// defined this so I could say "for ever" in an  infinite for loop
+#define ever (;;)
 
-//TODO: Test receiving interrupt and task
+//TODO: ADD A FUNCTION THAT CHECKS FOR WHAT CHANNELS AVAILABLE FOR SENDING AND
+//TODO: A FUNCTION THAT CALLS THE ABOVE FUNCTION AND THE RELEVANT SENDCANMESSAGE FUNCTION
+//		(extended vs regular CAN) Done (tbc)
 
-//TODO: Comment the heck out of everything
+//TODO: Create CanTxGatekeeperTask (so only one task can access the SPI-CAN peripheral at once)
+//		Test it by creating the freertos task handle
 
-//TODO:write a how to use README that includes creating CANRXInterruptTask, mutex and queue as well as adding CAN.C and CAN.h
+//TODO: Test receiving interrupt and task (tbd)
+
+//TODO: Once a CanTxGatekeeperTask is added, a mutex will be needed to avoid race condition
+//		of the SPI peripheral between CANTxGatekeeper and CANRxInterruptTask
+
+//TODO: Comment the heck out of everything (tbc)
+
+//TODO: write a how to use README that includes creating CANRXInterruptTask,
+//		mutex and queue as well as adding CAN.C and CAN.h (tbd)
+
+// TODO: Check available channels, if not there add it to queue
+// if theres time ^
+
+/*-------------------------------SPI interface instructions-------------------------------*/
 
 /**
- * @brief write to registry in CAN IC
+ * @brief write to registry in CAN IC       //FIXME: is this read or write...
  * @param address: hex address of the register
- * 		  value: value to be written to the register
+ * 		  bufffer: to store value read
  * @retval None
  */
 void CAN_IC_READ_REGISTER(uint8_t address, uint8_t* buffer)
 {
-	uint8_t packet[3] = {0x03, address};
+	// Packet includes 3 bytes
+	// 1st byte: 0x03 (specifies as read instruction)
+	// 2nd byte: address of register to read
+	// 3rd byte: dont care byte
+	uint8_t packet[3] = {0x03, address, 0x00};
 
-	HAL_GPIO_WritePin(CAN_CS_GPIO_Port, CAN_CS_Pin, GPIO_PIN_RESET); //set CS pin low
+	HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, GPIO_PIN_RESET); // Initialize instruction by setting CS pin low
 	HAL_SPI_Transmit(&hspi1, packet, 2, 100U); //transmit
 	HAL_SPI_Receive(&hspi1, buffer, 1, 100U); //receive register contents
-	HAL_GPIO_WritePin(CAN_CS_GPIO_Port, CAN_CS_Pin, GPIO_PIN_SET); //set CS pin high
-}
-
-/**
- * @brief write to a spicific series of bits in a register in CAN IC
- * @param address: hex address of the register
- * 		  mask: bit mask
- * 		  value: value to be written to the register
- * @retval None
- */
-void CAN_IC_WRITE_REGISTER_BITWISE(uint8_t address, uint8_t mask, uint8_t value)
-{
-	uint8_t packet[4] = {0x05, address, mask, value};
-
-	HAL_GPIO_WritePin(CAN_CS_GPIO_Port, CAN_CS_Pin, GPIO_PIN_RESET); //set CS pin low
-	HAL_SPI_Transmit(&hspi1, packet, 4, 100U); //transmit
-	HAL_GPIO_WritePin(CAN_CS_GPIO_Port, CAN_CS_Pin, GPIO_PIN_SET); //set CS pin high
+	HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, GPIO_PIN_SET); // Terminate instruction by setting CS pin high
 }
 
 /**
@@ -50,11 +53,32 @@ void CAN_IC_WRITE_REGISTER_BITWISE(uint8_t address, uint8_t mask, uint8_t value)
  */
 void CAN_IC_WRITE_REGISTER(uint8_t address, uint8_t value)
 {
+	// Packet includes 3 bytes
+	// 1st byte: 0x02 (specifies as write instruction)
+	// 2nd byte: address of register to write to
+	// 3rd byte: value to write
 	uint8_t packet[3] = {0x02, address, value};
 
-	HAL_GPIO_WritePin(CAN_CS_GPIO_Port, CAN_CS_Pin, GPIO_PIN_RESET); //set CS pin low
+	HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, GPIO_PIN_RESET); //set CS pin low
 	HAL_SPI_Transmit(&hspi1, packet, 3, 100U);	//transmit
-	HAL_GPIO_WritePin(CAN_CS_GPIO_Port, CAN_CS_Pin, GPIO_PIN_SET); //set CS pin high
+	HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, GPIO_PIN_SET); //set CS pin high
+}
+
+/**
+ * @brief write to a specific series of bits in a register in CAN IC
+ * @param address: hex address of the register
+ * 		  mask: bit mask
+ * 		  value: value to be written to the register
+ * @retval None
+ */
+void CAN_IC_WRITE_REGISTER_BITWISE(uint8_t address, uint8_t mask, uint8_t value)
+{
+	// 0x05 specifies bit-write instruction
+	// mask specifies which bits can be modified (1 means bit can be modified)
+	uint8_t packet[4] = {0x05, address, mask, value};
+	HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, GPIO_PIN_RESET); //set CS pin low
+	HAL_SPI_Transmit(&hspi1, packet, 4, 100U); //transmit
+	HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, GPIO_PIN_SET); //set CS pin high
 }
 
 /**
@@ -67,62 +91,110 @@ void CAN_IC_WRITE_REGISTER(uint8_t address, uint8_t value)
 void ConfigureCANSPI(void)
 {
 	uint8_t resetCommand = 0xa0; //instruction to reset IC to default
-	uint8_t CNF1 = 0x01; //BRP = 0 to make tq = 250ns and a SJW of 1Tq
-	uint8_t CNF2 = 0xd8; //PRSEG = 0, PHSEG1 = 3, SAM = 0, BTLMODE = 1
-	uint8_t CNF3 = 0x01; //WAFKIL disabled, PHSEG2 = 2 (BTL enabled) but PHSEG = 1 makes it backwards compatible???? wat
+	uint8_t CONFIG_CNF1 = 0x00; //BRP = 0 to make tq = 250ns and a SJW of 1Tq
+	uint8_t CONFIG_CNF2 = 0xd8; //PRSEG = 0, PHSEG1 = 3, SAM = 0, BTLMODE = 1
+	uint8_t CONFIG_CNF3 = 0x01; //WAFKIL disabled, PHSEG2 = 2 (BTL enabled) but PHSEG = 1 makes it backwards compatible???? wat
 
-	HAL_GPIO_WritePin(CAN_CS_GPIO_Port, CAN_CS_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, GPIO_PIN_RESET);
 	HAL_SPI_Transmit(&hspi1, &resetCommand, 1, 100U);  //reset IC to default
-	HAL_GPIO_WritePin(CAN_CS_GPIO_Port, CAN_CS_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, GPIO_PIN_SET);
 
 	CAN_IC_WRITE_REGISTER(0x0f, 0x80); //Ensure IC is in configuration mode
 
-	CAN_IC_WRITE_REGISTER(0x2a, CNF1); //configure CNF1
-	CAN_IC_WRITE_REGISTER(0x29, CNF2); //configure CNF2
-	CAN_IC_WRITE_REGISTER(0x28, CNF3); //configure CNF3
+	CAN_IC_WRITE_REGISTER(CNF1, CONFIG_CNF1); //configure CNF1
+	CAN_IC_WRITE_REGISTER(CNF2, CONFIG_CNF2); //configure CNF2
+	CAN_IC_WRITE_REGISTER(CNF3, CONFIG_CNF3); //configure CNF3
 
-	CAN_IC_WRITE_REGISTER(0x2b, 0xff); //configure interrupts, currently enable error and and wakeup INT
-	CAN_IC_WRITE_REGISTER(0x2c, 0x00); //clear INTE flags
+	CAN_IC_WRITE_REGISTER(CANINTE, 0xff); //configure interrupts, currently enable error and and wakeup INT
+	CAN_IC_WRITE_REGISTER(CANINTF, 0x00); //clear INTE flags
 									   //this should be a bit-wise clear in any other case to avoid unintentionally clearing flags
 
 	CAN_IC_WRITE_REGISTER(0x0c, 0x0f); //set up RX0BF and RX1BF as interrupt pins
 
-	CAN_IC_WRITE_REGISTER(0x60, 0x60); //accept any message on buffer 0
-	CAN_IC_WRITE_REGISTER(0x70, 0x60); //accept any message on buffer 1
+	CAN_IC_WRITE_REGISTER(RXB0CTRL, 0x60); //accept any message on buffer 0
+	CAN_IC_WRITE_REGISTER(RXB1CTRL, 0x60); //accept any message on buffer 1
 
 	CAN_IC_WRITE_REGISTER(0x0f, 0x04); //Put IC in normal operation mode with CLKOUT pin enable and 1:1 prescaler
 }
 
+/*-------------------------------------------------------------------------------------------*/
+
+uint8_t checkAvailableTXChannel()
+{
+    uint32_t prevWakeTime = xTaskGetTickCount(); 	//Delay is fine if we have a CanTxGatekeeperTask
+
+    for ever
+    {
+        uint8_t TXB0Status;
+        uint8_t TXB1Status;
+        uint8_t TXB2Status;
+
+        CAN_IC_READ_REGISTER(TXB0CTRL, &TXB0Status);
+        TXB0Status = TXB0Status >> 3; //Not masking out bits
+
+        if (!TXB0Status) {
+            return 0;
+        }
+
+        CAN_IC_READ_REGISTER(TXB1CTRL, &TXB1Status);
+        TXB1Status = TXB1Status >> 3; //Not masking out bits
+
+        if (!TXB1Status) {
+            return 1;
+        }
+
+        CAN_IC_READ_REGISTER(TXB2CTRL, &TXB2Status);
+        TXB2Status = TXB2Status >> 3; //Not masking out bits
+
+        if (!TXB2Status) {
+            return 2;
+        }
+
+        prevWakeTime += TX_CHANNEL_CHECK_DELAY;
+        osDelayUntil(prevWakeTime);
+
+    }
+}
+
+//TODO: make sendtxtask and a queue for it like the old mcu
 /**
   * @brief send CAN message
   * @param None
   * @retval None
   */
-void sendCANMessage(uint8_t channel, uint16_t ID, uint8_t DLC, uint8_t* data)
+void sendCANMessage(CANMsg *msg)
 {
-	uint8_t initialBufferAddress = 0x20 + 16*(channel); //0x30 for channel 1, 0x40 for channel 2, 0x50 for channel 3
+	uint8_t channel = checkAvailableTXChannel();
+    uint8_t initialBufferAddress = TXB0CTRL + 16*(channel);
 
-	uint8_t sendCommand = 0x81; //instruction to send CAN message on buffer 1
+	// yikes
+    // osMessageQueueGet(CANTxMessageQueue, msg, NULL, osWaitForever);
 
-	uint8_t TXBNSIDH = (ID & 0b11111111000) >> 3;
-	uint8_t TXBNSIDL = ((ID & 0b111) << 5);
-	uint8_t TXBNDLC = DLC & 0x0f;
+	uint8_t sendCommand = 0x80 + (0x01 < channel); 	   //instruction to send CAN message on buffer 1
 
+	uint8_t TXBNSIDH = (msg->ID & 0b11111111000) >> 3; // mask upper ID register (SD 10-3)
+	uint8_t TXBNSIDL = (msg->ID & 0b111) << 5; 	   	   // mask lower ID register (SD 2-0)
+	uint8_t TXBNDLC = msg->DLC & 0x0F;				   // mask DLC
+
+	// Set Standard Identifier and DLC
 	CAN_IC_WRITE_REGISTER(initialBufferAddress + 1, TXBNSIDH); // SD 10-3
-	CAN_IC_WRITE_REGISTER(initialBufferAddress + 2, TXBNSIDL); //SD 2-0
-	CAN_IC_WRITE_REGISTER(initialBufferAddress + 5, TXBNDLC);  //DLC
+	CAN_IC_WRITE_REGISTER(initialBufferAddress + 2, TXBNSIDL); // SD 2-0
+	CAN_IC_WRITE_REGISTER(initialBufferAddress + 5, TXBNDLC);  // DLC
 
+	// Set data to registers
 	uint8_t initialDataBufferAddress = initialBufferAddress + 6;
-	for(int i = 0; i < DLC; i++)
+	for(int i = 0; i < msg->DLC; i++)
 	{
-		CAN_IC_WRITE_REGISTER(initialDataBufferAddress + i, data[i]); //write to relevant data registers
+		CAN_IC_WRITE_REGISTER(initialDataBufferAddress + i, msg->data[i]); //write to relevant data registers
 	}
 
-	CAN_IC_WRITE_REGISTER_BITWISE(initialBufferAddress, 0x02, 0x02); //set transmit buffer priority to 4 (max)
+	// set transmit buffer priority to 3 (max)
+	// write to TXBNCTRL<1:0>
+	CAN_IC_WRITE_REGISTER_BITWISE(initialBufferAddress, 0x03, 0x03);
 
-	HAL_GPIO_WritePin(CAN_CS_GPIO_Port, CAN_CS_Pin, GPIO_PIN_RESET);
-	HAL_SPI_Transmit(&hspi1, &sendCommand, 1, 100U);  //Send command to transmit
-	HAL_GPIO_WritePin(CAN_CS_GPIO_Port, CAN_CS_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, GPIO_PIN_RESET);
+	HAL_SPI_Transmit(&hspi1, &sendCommand, 1, 100U);  // Send command to transmit
+	HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, GPIO_PIN_SET);
 }
 
 /**
@@ -130,47 +202,42 @@ void sendCANMessage(uint8_t channel, uint16_t ID, uint8_t DLC, uint8_t* data)
   * @param None
   * @retval None
   */
-void sendExtendedCANMessage(uint8_t channel, uint64_t ID, uint8_t DLC, uint8_t* data)
+void sendExtendedCANMessage(CANMsg *msg)
 {
-	uint8_t initialBufferAddress = 0x30 + 16*(channel); //0x30 for channel 1, 0x40 for channel 2, 0x50 for channel 3
+	// uint8_t initialBufferAddress = TXB0CTRL + 16*(channel); //TXB0CTRL for channel 1, TXB1CTRL for channel 2, TXB2CTRL for channel 3
+    uint8_t channel = checkAvailableTXChannel();
+	uint8_t initialBufferAddress = TXB0CTRL + 16*(channel);
+
+	// delete this later
+    //osMessageQueueGet(CANTxMessageQueue, msg, NULL, osWaitForever);
+    //todo: FIX THIS CHANNEL!
 
 	uint8_t sendCommand = 0x80 +  (1 << channel); //instruction to send CAN message on channel
 
-	uint8_t TXBNEID0 = ID & 0xff;
-	uint8_t TXBNEID8 = (ID >> 8) & 0xff;
-	uint8_t TXBNSIDL = (((ID >> 18) & 0x07) << 5) | 0b00001000 | ((ID >> 16) & 0x03);
-	uint8_t TXBNSIDH = (ID >> 21) & 0xff;
-	uint8_t TXBNDLC = DLC & 0x0f;
+	uint8_t TXBNSIDH = (msg->extendedID >> 21) & 0xFF;
+	uint8_t TXBNSIDL = (((msg->extendedID >> 18) & 0x07) << 5) | 0x08 | ((msg->ID >> 16) & 0x03);
+	uint8_t TXBNEID8 = (msg->extendedID >> 8) & 0xFF;
+	uint8_t TXBNEID0 = msg->extendedID & 0xFF;
+	uint8_t TXBNDLC = msg->DLC & 0x0F;
 
 	CAN_IC_WRITE_REGISTER(initialBufferAddress + 1, TXBNSIDH); // SD 10-3
-	CAN_IC_WRITE_REGISTER(initialBufferAddress + 2, TXBNSIDL); //SD 2-0, ED 17-16
-	CAN_IC_WRITE_REGISTER(initialBufferAddress + 3, TXBNEID8); //ED 15-8
-	CAN_IC_WRITE_REGISTER(initialBufferAddress + 4, TXBNEID0); //ED 7-0
-	CAN_IC_WRITE_REGISTER(initialBufferAddress + 5, TXBNDLC);  //DLC
-
-	CAN_IC_READ_REGISTER(initialBufferAddress + 1, &TXBNSIDH); // SD 10-3
-	CAN_IC_READ_REGISTER(initialBufferAddress + 2, &TXBNSIDL); //SD 2-0, ED 17-16
-	CAN_IC_READ_REGISTER(initialBufferAddress + 3, &TXBNEID8); //ED 15-8
-	CAN_IC_READ_REGISTER(initialBufferAddress + 4, &TXBNEID0); //ED 7-0
-	CAN_IC_READ_REGISTER(initialBufferAddress + 5, &TXBNDLC);  //DLC
+	CAN_IC_WRITE_REGISTER(initialBufferAddress + 2, TXBNSIDL); // SD 2-0, ED 17-16
+	CAN_IC_WRITE_REGISTER(initialBufferAddress + 3, TXBNEID8); // ED 15-8
+	CAN_IC_WRITE_REGISTER(initialBufferAddress + 4, TXBNEID0); // ED 7-0
+	CAN_IC_WRITE_REGISTER(initialBufferAddress + 5, TXBNDLC);  // DLC
 
 	uint8_t initialDataBufferAddress = initialBufferAddress + 6;
-	for(int i = 0; i < DLC; i++)
+	for(int i = 0; i < msg->DLC; i++)
 	{
-		CAN_IC_WRITE_REGISTER(initialDataBufferAddress + i, data[i]); //write to relevant data registers
+		CAN_IC_WRITE_REGISTER(initialDataBufferAddress + i, msg->data[i]); //write to relevant data registers
 	}
 
-	CAN_IC_WRITE_REGISTER_BITWISE(initialBufferAddress, 0x02, 0x02); //set transmit buffer priority to 4 (max)
+	CAN_IC_WRITE_REGISTER_BITWISE(initialBufferAddress, 0x03, 0x03); //set transmit buffer priority to 3 (max)
 
-	uint8_t status;
-	CAN_IC_READ_REGISTER(initialBufferAddress, &status);
-	HAL_GPIO_WritePin(CAN_CS_GPIO_Port, CAN_CS_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, GPIO_PIN_RESET);
 	HAL_SPI_Transmit(&hspi1, &sendCommand, 1, 100U);  //Send command to transmit
-	HAL_GPIO_WritePin(CAN_CS_GPIO_Port, CAN_CS_Pin, GPIO_PIN_SET);
-	CAN_IC_READ_REGISTER(initialBufferAddress, &status);
+	HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, GPIO_PIN_SET);
 }
-
-
 
 /**
   * @brief Receive CAN message
@@ -179,7 +246,7 @@ void sendExtendedCANMessage(uint8_t channel, uint64_t ID, uint8_t DLC, uint8_t* 
   */
 void receiveCANMessage(uint8_t channel, uint32_t* ID, uint8_t* DLC, uint8_t* data)
 {
-	uint8_t initialBufferAddress = 0x60 + 16*(channel); //0x60 for channel 1, 0x70 for channel 2
+	uint8_t initialBufferAddress = RXB0CTRL + 16*(channel); //RXB0CTRL for channel 1, RXB1CTRL for channel 2
 
 	uint8_t RXBNSIDH = 0;
 	uint8_t RXBNSIDL = 0;
@@ -214,50 +281,7 @@ void receiveCANMessage(uint8_t channel, uint32_t* ID, uint8_t* DLC, uint8_t* dat
 		CAN_IC_READ_REGISTER(initialDataBufferAddress + i, (data++)); //read from relevant data registers
 	}
 
-	CAN_IC_WRITE_REGISTER_BITWISE(0x2c, 0xff, 0); //clear interrupts
-
+	CAN_IC_WRITE_REGISTER_BITWISE(CANINTF, channel + 1, channel + 1); //clear interrupts
 	return;
 }
 
-void CANRXInterruptTask(void* arg)
-{
-	uint16_t GPIO_Pin = 0;
-	RadioCommand radioCommand = {0};
-	for(;;)
-	{
-		//osMessageQueueGet(CANInterruptQueue, &GPIO_Pin, 0, osWaitForever);
-
-		while(canReceive == 0) {}
-		canReceive = 0;
-		GPIO_Pin = CAN_RX0BF_Pin;
-
-		uint32_t ID = 0;
-		uint8_t DLC = 0;
-		uint8_t data[8] = {0};
-
-		if (osMutexWait(SPIMutexHandle, 0) == osOK)
-		{
-			if(GPIO_Pin == CAN_RX0BF_Pin)
-			{
-				receiveCANMessage(0, &ID, &DLC, data);
-			}
-			else
-			{
-				receiveCANMessage(1, &ID, &DLC, data);
-			}
-			osMutexRelease(SPIMutexHandle);
-
-			radioCommand.size = DLC;
-			radioCommand.command = TRANSMIT;
-			uint16_t lowerID = ID & 0xFFFF;
-			radioCommand.data = solarMalloc(DLC + 2);
-			memcpy(radioCommand.data, &lowerID, 2);
-			memcpy(&(radioCommand.data[2]), data, DLC);
-
-			osStatus_t ret = osMessageQueuePut(radioCommandQueue, &radioCommand, 0, 0);
-			if(ret != osOK) {
-				solarFree(radioCommand.data);
-			}
-		}
-	}
-}

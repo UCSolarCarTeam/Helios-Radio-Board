@@ -43,6 +43,7 @@ void RadioGetCommand(SUBGHZ_RadioGetCmd_t Command, uint8_t *pBuffer, uint16_t Si
         HAL_SUBGHZ_ExecGetCmd(&hsubghz, Command, pBuffer, Size);
     }
 }
+
 void RadioWriteBuffer(uint8_t Offset, uint8_t *pBuffer, uint16_t Size) {
     {
         HAL_SUBGHZ_WriteBuffer(&hsubghz, Offset, pBuffer, Size);
@@ -53,6 +54,8 @@ void RadioReadBuffer(uint8_t Offset, uint8_t *pBuffer, uint16_t Size) {
         HAL_SUBGHZ_ReadBuffer(&hsubghz, Offset, pBuffer, Size);
     }
 }
+
+// Why have one for a buffer and one for a single value
 void RadioWriteRegisters(uint16_t Address, uint8_t *pBuffer, uint16_t Size) {
     {
         HAL_SUBGHZ_WriteRegisters(&hsubghz, Address, pBuffer, Size);
@@ -247,6 +250,7 @@ void RadioSetupRX()
 }
 
 //TODO: use semaphore instead, for the future
+// nvm, no need for this
 void HAL_SUBGHZ_RxCpltCallback(SUBGHZ_HandleTypeDef *hsubghz) {
     RadioCommand radioCommand = {0};
     radioCommand.command = RECEIVE;

@@ -28,6 +28,9 @@
 #include "uartRxTask.h"
 #include "uartTxTask.h"
 #include "debugTask.h"
+
+#include "CANRxInterruptTask.h"
+#include "CANTxGatekeeperTask.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -131,6 +134,14 @@ osMessageQueueId_t toggleCommandQueue;
 #if RX
 osMessageQueueId_t RadioReceiveInterruptQueue;
 #endif
+
+#if 0
+/* Semaphore for something */
+osSemaphoreId_t radioSemaphoreHandle;
+const osSemaphoreAttr_t radioSemaphore_attributes = {
+  .name = "radioSemaphoreHandle"
+};
+#endif
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -196,6 +207,8 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
   /* add semaphores, ... */
+
+
   /* USER CODE END RTOS_SEMAPHORES */
 
   /* USER CODE BEGIN RTOS_TIMERS */
