@@ -10,8 +10,8 @@
 #include "cmsis_os.h"
 #include "CAN.h"
 
-void CanRxInterruptTask(void* arg);
-void CANRxInterrupt(void const* arg);
+void CANRxInterruptTask(void* arg);
+void CANRxInterrupt();
 
 extern SPI_HandleTypeDef hspi1;
 extern osMutexId_t SPIMutexHandle;

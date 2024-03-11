@@ -309,12 +309,15 @@ void radioHandleCommand(RadioCommand *radioCommand)
 {
     switch(radioCommand->command)
     {
+    	uint8_t commandReadback[10];
+    	uint8_t register_readback;
         case SET_COMMAND:
             RadioSetCommand((SUBGHZ_RadioSetCmd_t)radioCommand->address, radioCommand->data, radioCommand->size);
             /*TODO: add check for correct size of buffer input and valid SUBGHZ_RadioSetCmd_t enum*/
             break;
         case GET_COMMAND:
-            uint8_t commandReadback[10];
+        	// error: a label can only be part of a statement and a declaration is not a statement
+            // uint8_t commandReadback[10];
             RadioGetCommand((SUBGHZ_RadioSetCmd_t)radioCommand->address, commandReadback, radioCommand->size);
             solarPrint("readback Values: ");
             for(int i = 0; i < radioCommand->size; i++)
@@ -334,7 +337,8 @@ void radioHandleCommand(RadioCommand *radioCommand)
             RadioWriteRegister(radioCommand->address, *radioCommand->data);
             break;
         case READ_REGISTER:
-            uint8_t register_readback;
+        	// error: a label can only be part of a statement and a declaration is not a statement
+            // uint8_t register_readback;
             RadioReadRegister(radioCommand->address, &register_readback);
             break;
     #if TX

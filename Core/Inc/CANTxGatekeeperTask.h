@@ -11,8 +11,8 @@
 #include "cmsis_os.h"
 #include "CAN.h"
 
-void CanTxGatekeeperTask(void* arg);
-void CanTxGateKeeper(CANMsg *msg);
+void CANTxGatekeeperTask(void* arg);
+void CANTxGateKeeper(CANMsg *msg);
 
 extern SPI_HandleTypeDef hspi1;
 extern osMutexId_t SPIMutexHandle;

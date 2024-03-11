@@ -7,7 +7,7 @@
 
 #include "CANTxGatekeeperTask.h"
 
-void CanTxGatekeeperTask(void* arg) {
+void CANTxGatekeeperTask(void* arg) {
 
 	// This block is to initialize a message queue of CAN Messages to send for testing
 	# if 1
@@ -25,20 +25,20 @@ void CanTxGatekeeperTask(void* arg) {
 			.data = {0xFF}
 	};
 
-	osMessagePut(CANTxMessageQueue, &msg1, 0);
-	osMessagePut(CANTxMessageQueue, &msg2, 0);
-	osMessagePut(CANTxMessageQueue, &msg1, 0);
-	osMessagePut(CANTxMessageQueue, &msg2, 0);
+	osMessageQueuePut(CANTxMessageQueue, &msg1, 0, osWaitForever);
+	osMessageQueuePut(CANTxMessageQueue, &msg2, 0, osWaitForever);
+	osMessageQueuePut(CANTxMessageQueue, &msg1, 0, osWaitForever);
+	osMessageQueuePut(CANTxMessageQueue, &msg2, 0, osWaitForever);
 	# endif
 
     CANMsg newMsg;
 
     for (;;) {
-        CanTxGatekeeper(&newMsg);
+        CANTxGatekeeper(&newMsg);
     }
 }
 
-void CanTxGatekeeper(CANMsg *msg) {
+void CANTxGatekeeper(CANMsg *msg) {
 	// Acquire message to send from queue
 	osMessageQueueGet(CANTxMessageQueue, msg, NULL, osWaitForever);
 
@@ -55,6 +55,7 @@ void CanTxGatekeeper(CANMsg *msg) {
 		{
 			sendExtendedCANMessage(msg);
 		}
+		osDelay(1000);
 		osMutexRelease(SPIMutexHandle);
 	}
 

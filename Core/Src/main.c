@@ -124,7 +124,16 @@ const osMutexAttr_t vaListMutex_attributes = {
   .name = "vaListMutexHandle"
 };
 
+osMutexId_t CANTxGateKeeperTaskHandle;
+const osThreadAttr_t CANTxGateKeeperTask_attributes = {
+  .name = "CANTxGateKeeperTask",
+  .priority = (osPriority) osPriorityNormal1,
+  .stack_size = DEFAULT_TASK_STACK_SIZE
+};
+
 osMessageQueueId_t CANInterruptQueue;
+osMessageQueueId_t CANTxMessageQueue;
+
 osMessageQueueId_t radioCommandQueue;
 osMessageQueueId_t uartTxQueue;
 osMessageQueueId_t uartRxQueue;
@@ -195,6 +204,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
   RadioInit();
   ConfigureCANSPI();
+  HAL_GPIO_TogglePin(LED_RED_GPIO_Port, LED_RED_Pin);
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -216,6 +226,8 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_QUEUES */
   CANInterruptQueue = osMessageQueueNew(CAN_INTERRUPT_QUEUE_COUNT, sizeof(uint16_t), NULL);
+  CANTxMessageQueue = osMessageQueueNew(5, sizeof(CANMsg), NULL);
+
   radioDataQueue = osMessageQueueNew(RADIO_DATA_QUEUE_COUNT, sizeof(RadioData), NULL);
   radioCommandQueue = osMessageQueueNew(UART_RX_DATA_QUEUE_COUNT, sizeof(RadioCommand), NULL);
   uartTxQueue = osMessageQueueNew(UART_TX_DATA_QUEUE_COUNT, sizeof(UartTxData), NULL);
@@ -233,18 +245,24 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_THREADS */
 
+  /* creation of radioTask */
+  // radioTaskHandle = osThreadNew(RadioTask, NULL, &radioTask_attributes);
+
   /* creation of toggleTask */
-  radioTaskHandle = osThreadNew(RadioTask, NULL, &radioTask_attributes);
-  /* creation of toggleTask */
-  toggleTaskHandle = osThreadNew(ToggleTask, NULL, &toggleTask_attributes);
+  // toggleTaskHandle = osThreadNew(ToggleTask, NULL, &toggleTask_attributes);
+
   /* creation of uartRxTask*/
   uartRxTaskHandle = osThreadNew(UartRxTask, NULL, &uartRxTask_attributes);
+
   /* creation of uartTxTask*/
   uartTxTaskHandle = osThreadNew(UartTxTask, NULL, &uartTxTask_attributes);
+
   /* creation of debugTask*/
   debugTaskHandle = osThreadNew(DebugTask, NULL, &debugTask_attributes);
+
   /* creation of CANRXInterruptTask*/
-  CANRXInterruptTaskHandle = osThreadNew(CANRXInterruptTask, NULL, &CANRXInterruptTask_attributes);
+  CANRXInterruptTaskHandle = osThreadNew(CANRxInterruptTask, NULL, &CANRXInterruptTask_attributes);
+  // CANTxGateKeeperTaskHandle = osThreadNew(CANTxGatekeeperTask, NULL, &CANTxGateKeeperTask_attributes);
 
   /* USER CODE END RTOS_THREADS */
 

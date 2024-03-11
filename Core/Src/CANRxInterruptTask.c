@@ -16,7 +16,7 @@ void CANRxInterruptTask(void* arg)
 }
 
 
-void CANRxInterrupt(void const* arg)
+void CANRxInterrupt()
 {
 	uint16_t GPIO_Pin = 0;
 	osMessageQueueGet(CANInterruptQueue, &GPIO_Pin, 0, osWaitForever);
@@ -44,13 +44,16 @@ void CANRxInterrupt(void const* arg)
 	#if 1
 	if(ID == 0xCCCCCCC)
 	{
-		blueStatus = data[0];
+//		blueStatus = data[0];
 		HAL_GPIO_TogglePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin);
 	}
 	else
 	{
-		greenStatus = data[0];
+//		greenStatus = data[0];
 		HAL_GPIO_TogglePin(LED_RED_GPIO_Port, LED_RED_Pin);
 	}
+
+	osDelay(250);
+	HAL_GPIO_TogglePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin);
 	#endif
 }
