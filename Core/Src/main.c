@@ -568,11 +568,12 @@ void ToggleTask(void *argument)
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-	//osMessageQueuePut(CANInterruptQueue, &GPIO_Pin, 0, 0);
-	if(GPIO_Pin == CAN_RX0BF_Pin) {
+	osMessageQueuePut(CANInterruptQueue, &GPIO_Pin, 0, 0);
+	if (GPIO_Pin == CAN_RX0BF_Pin) {
 		canReceive = 1;
 	}
 }
+
 /* USER CODE END 4 */
 /* USER CODE END 4 */
 

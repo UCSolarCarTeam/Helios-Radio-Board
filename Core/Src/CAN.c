@@ -105,9 +105,9 @@ void ConfigureCANSPI(void)
 	CAN_IC_WRITE_REGISTER(CNF2, CONFIG_CNF2); //configure CNF2
 	CAN_IC_WRITE_REGISTER(CNF3, CONFIG_CNF3); //configure CNF3
 
-	CAN_IC_WRITE_REGISTER(CANINTE, 0xff); //configure interrupts, currently enable error and and wakeup INT
-	CAN_IC_WRITE_REGISTER(CANINTF, 0x00); //clear INTE flags
-									   //this should be a bit-wise clear in any other case to avoid unintentionally clearing flags
+	CAN_IC_WRITE_REGISTER(CANINTE, 0xff); 	//configure interrupts, currently enable error and and wakeup INT
+	CAN_IC_WRITE_REGISTER(CANINTF, 0x00); 	//clear INTE flags
+									   		//this should be a bit-wise clear in any other case to avoid unintentionally clearing flags
 
 	CAN_IC_WRITE_REGISTER(0x0c, 0x0f); //set up RX0BF and RX1BF as interrupt pins
 
@@ -115,6 +115,10 @@ void ConfigureCANSPI(void)
 	CAN_IC_WRITE_REGISTER(RXB1CTRL, 0x60); //accept any message on buffer 1
 
 	CAN_IC_WRITE_REGISTER(0x0f, 0x04); //Put IC in normal operation mode with CLKOUT pin enable and 1:1 prescaler
+
+	if CANTestSetup {
+		CAN_IC_WRITE_REGISTER(0x0F, 0x44);	// Put IC in loop-back mode for testing as well as enable CLKOUT pin with 1:1 prescaler
+	}
 }
 
 /*-------------------------------------------------------------------------------------------*/
@@ -254,9 +258,9 @@ void receiveCANMessage(uint8_t channel, uint32_t* ID, uint8_t* DLC, uint8_t* dat
 
 	CAN_IC_READ_REGISTER(initialBufferAddress + 1, &RXBNSIDH); // SD 10-3
 	CAN_IC_READ_REGISTER(initialBufferAddress + 2, &RXBNSIDL); //SD 2-0, IDE, ED 17-16
-	CAN_IC_READ_REGISTER(initialBufferAddress + 5, &RXBDLC); //DLC
+	CAN_IC_READ_REGISTER(initialBufferAddress + 5, &RXBDLC);   //DLC
 
-	if(RXBNSIDL & 0x08)
+	if(RXBNSIDL & 0x08)	// Check RXBmSIDL.IDE to verify if CAN message has extended identifier
 	{
 		uint8_t RXBNEID8 = 0;
 		uint8_t RXBNEID0 = 0;
@@ -265,12 +269,13 @@ void receiveCANMessage(uint8_t channel, uint32_t* ID, uint8_t* DLC, uint8_t* dat
 		CAN_IC_READ_REGISTER(initialBufferAddress + 4, &RXBNEID0); //ED 7-0
 
 		*ID = (RXBNSIDH << 21) | (((RXBNSIDL >> 5) & 0x07) << 18) | ((RXBNSIDL & 0x03) << 16) | (RXBNEID8 << 8) | (RXBNEID0);
-	} else
+	} else // CAN message is standard
 	{
 		*ID = (RXBNSIDH << 3) | (RXBNSIDL >> 5);
 	}
 
-	*DLC = RXBDLC & 0x0f;
+	// Check data length of CAN message
+	*DLC = RXBDLC & 0x0F; 
 	if(*DLC > 8){
 		*DLC = 0;
 	}

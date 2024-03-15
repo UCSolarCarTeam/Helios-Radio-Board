@@ -27,6 +27,7 @@ typedef struct {
 } CANMsg;
 
 #define TX_CHANNEL_CHECK_DELAY 1
+#define CANTestSetup 1
 
 void CAN_IC_READ_REGISTER(uint8_t address, uint8_t* buffer);
 void CAN_IC_WRITE_REGISTER_BITWISE(uint8_t address, uint8_t mask, uint8_t value);
@@ -36,7 +37,6 @@ void sendCANMessage(CANMsg *msg);
 void sendExtendedCANMessage(CANMsg *msg);
 void receiveCANMessage(uint8_t channel, uint32_t* ID, uint8_t* DLC, uint8_t* data);
 uint8_t checkAvailableTXChannel();
-
 
 extern uint8_t canReceive;
 

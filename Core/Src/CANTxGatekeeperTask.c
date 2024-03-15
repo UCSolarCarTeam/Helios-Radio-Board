@@ -10,7 +10,8 @@
 void CANTxGatekeeperTask(void* arg) {
 
 	// This block is to initialize a message queue of CAN Messages to send for testing
-	# if 1
+	# if CANTestSetup
+	// Define dummy messages here...
 	CANMsg msg1 = {
 		.DLC = 1,
 		.ID = NULL,
@@ -25,6 +26,7 @@ void CANTxGatekeeperTask(void* arg) {
 			.data = {0xFF}
 	};
 
+	// Add test messages to queue here...
 	osMessageQueuePut(CANTxMessageQueue, &msg1, 0, osWaitForever);
 	osMessageQueuePut(CANTxMessageQueue, &msg2, 0, osWaitForever);
 	osMessageQueuePut(CANTxMessageQueue, &msg1, 0, osWaitForever);

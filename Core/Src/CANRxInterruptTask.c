@@ -15,7 +15,6 @@ void CANRxInterruptTask(void* arg)
 	}
 }
 
-
 void CANRxInterrupt()
 {
 	uint16_t GPIO_Pin = 0;
@@ -41,15 +40,15 @@ void CANRxInterrupt()
 
 	// TODO: write documentation on how to use this for the above code
 	// this is not necessary, this was for testing
-	#if 1
+	#if CANTestSetup
 	if(ID == 0xCCCCCCC)
 	{
-//		blueStatus = data[0];
+	//	blueStatus = data[0];
 		HAL_GPIO_TogglePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin);
 	}
 	else
 	{
-//		greenStatus = data[0];
+	//	greenStatus = data[0];
 		HAL_GPIO_TogglePin(LED_RED_GPIO_Port, LED_RED_Pin);
 	}
 
