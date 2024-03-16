@@ -104,14 +104,6 @@ const osThreadAttr_t debugTask_attributes = {
   .stack_size = DEFAULT_TASK_STACK_SIZE
 };
 
-/* Definitions for CANRXInterruptTask */
-osThreadId_t CANRXInterruptTaskHandle;
-const osThreadAttr_t CANRXInterruptTask_attributes = {
-  .name = "CANRXInterruptTask",
-  .priority = (osPriority_t) osPriorityNormal1,
-  .stack_size = DEFAULT_TASK_STACK_SIZE
-};
-
 /* Definitions for SPIMutex */
 osMutexId_t SPIMutexHandle;
 const osMutexAttr_t SPIMutex_attributes = {
@@ -128,6 +120,14 @@ osMutexId_t CANTxGateKeeperTaskHandle;
 const osThreadAttr_t CANTxGateKeeperTask_attributes = {
   .name = "CANTxGateKeeperTask",
   .priority = (osPriority) osPriorityNormal1,
+  .stack_size = DEFAULT_TASK_STACK_SIZE
+};
+
+/* Definitions for CANRXInterruptTask */
+osThreadId_t CANRXInterruptTaskHandle;
+const osThreadAttr_t CANRXInterruptTask_attributes = {
+  .name = "CANRXInterruptTask",
+  .priority = (osPriority_t) osPriorityNormal1,
   .stack_size = DEFAULT_TASK_STACK_SIZE
 };
 
@@ -260,9 +260,11 @@ int main(void)
   /* creation of debugTask*/
   debugTaskHandle = osThreadNew(DebugTask, NULL, &debugTask_attributes);
 
-  /* creation of CANRXInterruptTask*/
+  
   CANRXInterruptTaskHandle = osThreadNew(CANRxInterruptTask, NULL, &CANRXInterruptTask_attributes);
-  // CANTxGateKeeperTaskHandle = osThreadNew(CANTxGatekeeperTask, NULL, &CANTxGateKeeperTask_attributes);
+
+  /* creation of CANTxGatekeeperTask*/
+  CANTxGateKeeperTaskHandle = osThreadNew(CANTxGatekeeperTask, NULL, &CANTxGateKeeperTask_attributes);
 
   /* USER CODE END RTOS_THREADS */
 
