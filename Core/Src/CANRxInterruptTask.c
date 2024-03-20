@@ -8,6 +8,7 @@
 #include "CANRxInterruptTask.h"
 #include "CAN.h"
 
+
 void CANRxInterruptTask(void* arg)
 {
 	for(;;) {
@@ -40,7 +41,7 @@ void CANRxInterrupt()
 
 	// TODO: write documentation on how to use this for the above code
 	// this is not necessary, this was for testing
-	#if CANTestSetup
+	#if CAN_TEST_SETUP
 	if(ID == 0xCCCCCCC)
 	{
 	//	blueStatus = data[0];

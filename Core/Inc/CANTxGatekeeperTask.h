@@ -12,7 +12,7 @@
 #include "CAN.h"
 
 void CANTxGatekeeperTask(void* arg);
-void CANTxGateKeeper(CANMsg *msg);
+void CANTxGatekeeper(CANMsg *msg);
 
 extern SPI_HandleTypeDef hspi1;
 extern osMutexId_t SPIMutexHandle;

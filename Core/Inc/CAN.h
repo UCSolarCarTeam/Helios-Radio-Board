@@ -27,7 +27,8 @@ typedef struct {
 } CANMsg;
 
 #define TX_CHANNEL_CHECK_DELAY 1
-#define CANTestSetup 1
+
+#define CAN_TEST_SETUP 0
 
 void CAN_IC_READ_REGISTER(uint8_t address, uint8_t* buffer);
 void CAN_IC_WRITE_REGISTER_BITWISE(uint8_t address, uint8_t mask, uint8_t value);

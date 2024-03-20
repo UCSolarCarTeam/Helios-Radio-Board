@@ -10,33 +10,41 @@
 void CANTxGatekeeperTask(void* arg) {
 
 	// This block is to initialize a message queue of CAN Messages to send for testing
-	# if CANTestSetup
+	#if CAN_TEST_SETUP
 	// Define dummy messages here...
 	CANMsg msg1 = {
 		.DLC = 1,
-		.ID = NULL,
+		.ID = 0,
 		.extendedID = 0xCCCCCCC,
 		.data = {0xFF}
 	};
 
 	CANMsg msg2 = {
-			.DLC = 1,
-			.ID = NULL,
-			.extendedID = 0xAAAAAAA,
-			.data = {0xFF}
+			.DLC = 2,
+			.ID = 0,
+			.extendedID = 0xA5A5A5A,
+			.data = {0xFF, 0xFF}
+	};
+
+	CANMsg msg3 = {
+			.DLC = 3,
+			.ID = 0,
+			.extendedID = 0xCFCFCFC,
+			.data = {0xFF, 0xFF, 0xFF}
 	};
 
 	// Add test messages to queue here...
 	osMessageQueuePut(CANTxMessageQueue, &msg1, 0, osWaitForever);
 	osMessageQueuePut(CANTxMessageQueue, &msg2, 0, osWaitForever);
-	osMessageQueuePut(CANTxMessageQueue, &msg1, 0, osWaitForever);
-	osMessageQueuePut(CANTxMessageQueue, &msg2, 0, osWaitForever);
-	# endif
+	osMessageQueuePut(CANTxMessageQueue, &msg3, 0, osWaitForever);
+	#endif
 
     CANMsg newMsg;
 
     for (;;) {
+//    	osMessageQueuePut(CANTxMessageQueue, &msg1, 0, osWaitForever);
         CANTxGatekeeper(&newMsg);
+//        osDelay(1000);
     }
 }
 
@@ -49,7 +57,7 @@ void CANTxGatekeeper(CANMsg *msg) {
 	{
 		// check if CAN message is standard/extended
 		// if extendedID == 0, then message is standard
-		if (msg->extendedID == 0)
+		if ((msg->extendedID == 0) && (msg->ID != 0))
 		{
 			sendCANMessage(msg);
 		}
@@ -57,7 +65,6 @@ void CANTxGatekeeper(CANMsg *msg) {
 		{
 			sendExtendedCANMessage(msg);
 		}
-		osDelay(1000);
 		osMutexRelease(SPIMutexHandle);
 	}
 

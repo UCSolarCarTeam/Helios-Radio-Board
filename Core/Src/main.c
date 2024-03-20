@@ -31,6 +31,7 @@
 
 #include "CANRxInterruptTask.h"
 #include "CANTxGatekeeperTask.h"
+#include "queueMessageTask.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -53,8 +54,6 @@ UART_HandleTypeDef hlpuart1;
 SPI_HandleTypeDef hspi1;
 
 SUBGHZ_HandleTypeDef hsubghz;
-
-uint8_t canReceive = 0;
 
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
@@ -128,6 +127,20 @@ osThreadId_t CANRXInterruptTaskHandle;
 const osThreadAttr_t CANRXInterruptTask_attributes = {
   .name = "CANRXInterruptTask",
   .priority = (osPriority_t) osPriorityNormal1,
+  .stack_size = DEFAULT_TASK_STACK_SIZE
+};
+
+osThreadId_t queueMessageTask1Handle;
+const osThreadAttr_t queueMessageTask1_attributes = {
+  .name = "queueMessageTask1",
+  .priority = (osPriority_t) osPriorityNormal,
+  .stack_size = DEFAULT_TASK_STACK_SIZE
+};
+
+osThreadId_t queueMessageTask2Handle;
+const osThreadAttr_t queueMessageTask2_attributes = {
+  .name = "queueMessageTask2",
+  .priority = (osPriority_t) osPriorityNormal,
   .stack_size = DEFAULT_TASK_STACK_SIZE
 };
 
@@ -266,6 +279,10 @@ int main(void)
   /* creation of CANTxGatekeeperTask*/
   CANTxGateKeeperTaskHandle = osThreadNew(CANTxGatekeeperTask, NULL, &CANTxGateKeeperTask_attributes);
 
+  /* creation of queue CAN message tasks */
+  queueMessageTask1Handle = osThreadNew(queueMessageTask1, NULL, &queueMessageTask1_attributes);
+  queueMessageTask2Handle = osThreadNew(queueMessageTask2, NULL, &queueMessageTask2_attributes);
+
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -301,12 +318,12 @@ void SystemClock_Config(void)
 
   /** Initializes the CPU, AHB and APB buses clocks
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
-  RCC_OscInitStruct.HSEState = RCC_HSE_BYPASS_PWR;
-  RCC_OscInitStruct.HSEDiv = RCC_HSE_DIV1;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLM = RCC_PLLM_DIV2;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
+  RCC_OscInitStruct.PLL.PLLM = RCC_PLLM_DIV1;
   RCC_OscInitStruct.PLL.PLLN = 18;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
   RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV6;
@@ -572,11 +589,10 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 	osMessageQueuePut(CANInterruptQueue, &GPIO_Pin, 0, 0);
 	if (GPIO_Pin == CAN_RX0BF_Pin) {
-		canReceive = 1;
+		//canReceive = 1;
 	}
 }
 
-/* USER CODE END 4 */
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -589,10 +605,47 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
+#if TX
+	RadioCommand radioCommand = {0};
+  uint8_t sendBlink = SOLAR_FALSE;
+	uint16_t ID = 1;
+#elif RX
+  RadioData radioData = {0};
+#endif
   /* Infinite loop */
   for(;;)
   {
+#if TX
+    radioCommand.size = 3;
+    radioCommand.command = TRANSMIT;
+    radioCommand.data = solarMalloc(3);
+    memcpy(radioCommand.data, &ID, 2);
+    if(HAL_GPIO_ReadPin(BUTTON1_GPIO_Port, BUTTON1_Pin)) {
+        radioCommand.data[3] = 1;
+    } else {
+        radioCommand.data[3] = 0;
+    }
 
+    if(sendBlink){
+      osStatus_t ret = osMessageQueuePut(radioCommandQueue, &radioCommand, 0, 1000);
+      if(ret != osOK) {
+        solarFree(radioCommand.data);
+      } else {
+        ID++;
+      }
+    }
+
+    osMessageQueueGet(toggleCommandQueue, &sendBlink, 0, 0);
+    osDelay(100);
+#elif RX
+    osMessageQueueGet(radioDataQueue, &radioData, NULL, osWaitForever);
+    solarPrint("ID: %d", radioData.ID);
+    if(radioData.data[0] == 1) {
+        HAL_GPIO_WritePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin, GPIO_PIN_SET);
+    } else {
+        HAL_GPIO_WritePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin, GPIO_PIN_RESET);
+    }
+#endif
   }
   /* USER CODE END 5 */
 }

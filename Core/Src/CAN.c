@@ -116,9 +116,9 @@ void ConfigureCANSPI(void)
 
 	CAN_IC_WRITE_REGISTER(0x0f, 0x04); //Put IC in normal operation mode with CLKOUT pin enable and 1:1 prescaler
 
-	if CANTestSetup {
-		CAN_IC_WRITE_REGISTER(0x0F, 0x44);	// Put IC in loop-back mode for testing as well as enable CLKOUT pin with 1:1 prescaler
-	}
+	#if CAN_TEST_SETUP
+	CAN_IC_WRITE_REGISTER(0x0F, 0x44);	// Put IC in loop-back mode for testing as well as enable CLKOUT pin with 1:1 prescaler
+	#endif
 }
 
 /*-------------------------------------------------------------------------------------------*/
