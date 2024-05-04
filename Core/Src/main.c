@@ -239,7 +239,7 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_QUEUES */
   CANInterruptQueue = osMessageQueueNew(CAN_INTERRUPT_QUEUE_COUNT, sizeof(uint16_t), NULL);
-  CANTxMessageQueue = osMessageQueueNew(5, sizeof(CANMsg), NULL);
+  CANTxMessageQueue = osMessageQueueNew(8, sizeof(CANMsg), NULL);
 
   radioDataQueue = osMessageQueueNew(RADIO_DATA_QUEUE_COUNT, sizeof(RadioData), NULL);
   radioCommandQueue = osMessageQueueNew(UART_RX_DATA_QUEUE_COUNT, sizeof(RadioCommand), NULL);
@@ -254,7 +254,7 @@ int main(void)
 
   /* Create the thread(s) */
   /* creation of defaultTask */
-  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+  // defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
 
@@ -265,13 +265,13 @@ int main(void)
   // toggleTaskHandle = osThreadNew(ToggleTask, NULL, &toggleTask_attributes);
 
   /* creation of uartRxTask*/
-  uartRxTaskHandle = osThreadNew(UartRxTask, NULL, &uartRxTask_attributes);
+  // uartRxTaskHandle = osThreadNew(UartRxTask, NULL, &uartRxTask_attributes);
 
   /* creation of uartTxTask*/
-  uartTxTaskHandle = osThreadNew(UartTxTask, NULL, &uartTxTask_attributes);
+  // uartTxTaskHandle = osThreadNew(UartTxTask, NULL, &uartTxTask_attributes);
 
   /* creation of debugTask*/
-  debugTaskHandle = osThreadNew(DebugTask, NULL, &debugTask_attributes);
+  // debugTaskHandle = osThreadNew(DebugTask, NULL, &debugTask_attributes);
 
   
   CANRXInterruptTaskHandle = osThreadNew(CANRxInterruptTask, NULL, &CANRXInterruptTask_attributes);
@@ -587,8 +587,8 @@ void ToggleTask(void *argument)
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-	osMessageQueuePut(CANInterruptQueue, &GPIO_Pin, 0, 0);
-	if (GPIO_Pin == CAN_RX0BF_Pin) {
+	if ((GPIO_Pin == CAN_RX0BF_Pin) || (GPIO_Pin == CAN_RX1BF_Pin)) {
+		osMessageQueuePut(CANInterruptQueue, &GPIO_Pin, 0, 0);
 		//canReceive = 1;
 	}
 }

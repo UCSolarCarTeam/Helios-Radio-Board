@@ -13,6 +13,7 @@ void CANRxInterruptTask(void* arg)
 {
 	for(;;) {
 		CANRxInterrupt();
+		osDelay(100);
 	}
 }
 
@@ -31,7 +32,7 @@ void CANRxInterrupt()
 		{
 			receiveCANMessage(0, &ID, &DLC, data);
 		}
-		else
+		else if (GPIO_Pin == CAN_RX1BF_Pin)
 		{
 			receiveCANMessage(1, &ID, &DLC, data);
 		}
@@ -41,8 +42,8 @@ void CANRxInterrupt()
 
 	// TODO: write documentation on how to use this for the above code
 	// this is not necessary, this was for testing
-	#if CAN_TEST_SETUP
-	if(ID == 0xCCCCCCC)
+	#if 0
+	if(ID == 0xCFCFCFC)
 	{
 	//	blueStatus = data[0];
 		HAL_GPIO_TogglePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin);

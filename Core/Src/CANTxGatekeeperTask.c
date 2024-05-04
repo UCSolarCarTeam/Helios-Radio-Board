@@ -10,7 +10,7 @@
 void CANTxGatekeeperTask(void* arg) {
 
 	// This block is to initialize a message queue of CAN Messages to send for testing
-	#if CAN_TEST_SETUP
+	#if 0
 	// Define dummy messages here...
 	CANMsg msg1 = {
 		.DLC = 1,
@@ -44,7 +44,7 @@ void CANTxGatekeeperTask(void* arg) {
     for (;;) {
 //    	osMessageQueuePut(CANTxMessageQueue, &msg1, 0, osWaitForever);
         CANTxGatekeeper(&newMsg);
-//        osDelay(1000);
+        osDelay(100);
     }
 }
 
@@ -65,6 +65,7 @@ void CANTxGatekeeper(CANMsg *msg) {
 		{
 			sendExtendedCANMessage(msg);
 		}
+
 		osMutexRelease(SPIMutexHandle);
 	}
 

@@ -10,6 +10,6 @@ void queueMessageTask2(void* arg) {
 
 	for(;;) {
 		osMessageQueuePut(CANTxMessageQueue, &msg2, 0, osWaitForever);
-		osDelay(2000);
+		osDelay(3500);
 	}
 }
