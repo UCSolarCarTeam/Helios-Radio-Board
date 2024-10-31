@@ -1,6 +1,6 @@
 #pragma once
 
-#include "stm32f4xx.h"
+#include "stm32wlxx.h"
 
 // Defined at https://docs.google.com/spreadsheets/d/1soVLjeD9Sl7z7Z6cYMyn1fmn-cG7tx_pfFDsvgkCqMU/edit?usp=sharing
 #define BATTERY_PKG_ID 7

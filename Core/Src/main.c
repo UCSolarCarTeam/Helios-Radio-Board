@@ -32,6 +32,10 @@
 #include "CANRxInterruptTask.h"
 #include "CANTxGatekeeperTask.h"
 #include "queueMessageTask.h"
+
+#include "TelemetryReporting.h"
+
+#include "CanParser.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -144,6 +148,13 @@ const osThreadAttr_t queueMessageTask2_attributes = {
   .stack_size = DEFAULT_TASK_STACK_SIZE
 };
 
+osThreadId_t sendTelemetryTaskHandle;
+const osThreadAttr_t sendTelemetryTask_attributes = {
+  .name = "sendTelemetryTask",
+  .priority = (osPriority_t) osPriorityNormal,
+  .stack_size = DEFAULT_TASK_STACK_SIZE
+};
+
 osMessageQueueId_t CANInterruptQueue;
 osMessageQueueId_t CANTxMessageQueue;
 
@@ -153,9 +164,12 @@ osMessageQueueId_t uartRxQueue;
 osMessageQueueId_t radioDataQueue;
 osMessageQueueId_t debugTaskQueue;
 osMessageQueueId_t toggleCommandQueue;
+
 #if RX
 osMessageQueueId_t RadioReceiveInterruptQueue;
 #endif
+
+osMessageQueueId_t canRxQueue;
 
 #if 0
 /* Semaphore for something */
@@ -189,6 +203,7 @@ void ToggleTask(void *argument);
   */
 int main(void)
 {
+
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
@@ -215,7 +230,7 @@ int main(void)
   MX_SPI1_Init();
   MX_SUBGHZ_Init();
   /* USER CODE BEGIN 2 */
-  RadioInit();
+  //RadioInit();
   ConfigureCANSPI();
   HAL_GPIO_TogglePin(LED_RED_GPIO_Port, LED_RED_Pin);
   /* USER CODE END 2 */
@@ -250,11 +265,13 @@ int main(void)
 #if RX
   RadioReceiveInterruptQueue = osMessageQueueNew(RADIO_RECEIVE_INTERRUPT_QUEUE_COUNT, sizeof(uint8_t), NULL);
 #endif
+
+  canRxQueue = osMessageQueueNew(RADIO_RECEIVE_INTERRUPT_QUEUE_COUNT, sizeof(CanMsg), NULL);
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
   /* creation of defaultTask */
-  // defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
 
@@ -273,7 +290,8 @@ int main(void)
   /* creation of debugTask*/
   // debugTaskHandle = osThreadNew(DebugTask, NULL, &debugTask_attributes);
 
-  
+  sendTelemetryTaskHandle = osThreadNew(sendTelemetryTask, NULL, &sendTelemetryTask_attributes);
+
   CANRXInterruptTaskHandle = osThreadNew(CANRxInterruptTask, NULL, &CANRXInterruptTask_attributes);
 
   /* creation of CANTxGatekeeperTask*/
@@ -292,6 +310,7 @@ int main(void)
   osKernelStart();
 
   /* We should never get here as control is now taken by the scheduler */
+
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
@@ -371,7 +390,7 @@ static void MX_LPUART1_UART_Init(void)
   hlpuart1.Init.StopBits = UART_STOPBITS_1;
   hlpuart1.Init.Parity = UART_PARITY_NONE;
   hlpuart1.Init.Mode = UART_MODE_TX_RX;
-  hlpuart1.Init.HwFlowCtl = UART_HWCONTROL_RTS;
+  hlpuart1.Init.HwFlowCtl = UART_HWCONTROL_RTS_CTS;
   hlpuart1.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
   hlpuart1.Init.ClockPrescaler = UART_PRESCALER_DIV4;
   hlpuart1.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;

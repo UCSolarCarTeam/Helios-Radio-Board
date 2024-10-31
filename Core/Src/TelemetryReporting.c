@@ -1,5 +1,5 @@
 #include "cmsis_os.h"
-#include "stm32f4xx.h"
+#include "stm32wlxx.h"
 
 #include "TelemetryReporting.h"
 #include "TelemetryUtils.h"
@@ -29,14 +29,12 @@
 
 void sendTelemetryTask()
 {
-    uint32_t prevWakeTime = osKernelSysTick();
     // Salvos defined in https://docs.google.com/spreadsheets/d/1soVLjeD9Sl7z7Z6cYMyn1fmn-cG7tx_pfFDsvgkCqMU/edit#gid=782574835
     static unsigned char salvo = 1;
 
     for (;;)
     {
-        osDelayUntil(&prevWakeTime, CCS_TELEM_PERIOD_MS);
-        prevWakeTime = osKernelSysTick();
+        osDelay(CCS_TELEM_PERIOD_MS);
 
         sendKeyMotor();
         sendLights();
@@ -163,11 +161,11 @@ void sendDriverControls()
     packetPayload[0] = DRIVER_CONTROL_PKG_ID;
     unsigned char driverControlsBoardAliveArray[] = {messageIsRecent(driverControlData.lastReceived)};
     writeBoolsIntoArray(packetPayload, 1, driverControlsBoardAliveArray, 1);
-    writeBoolsIntoArray(packetPayload, 2, &driverControlData.lightsInputs, 7);
-    writeBoolsIntoArray(packetPayload, 3, &driverControlData.musicInputs, 4);
+    writeBoolsIntoArray(packetPayload, 2, (unsigned char *)(&driverControlData.lightsInputs), 7);
+    writeBoolsIntoArray(packetPayload, 3, (unsigned char *)(&driverControlData.musicInputs), 4);
     writeUShortIntoArray(packetPayload, 4, driverControlData.acceleration);
     writeUShortIntoArray(packetPayload, 6, driverControlData.regenBraking);
-    writeBoolsIntoArray(packetPayload, 8, &driverControlData.driverInputs, 8);
+    writeBoolsIntoArray(packetPayload, 8, (unsigned char *)(&driverControlData.driverInputs), 8);
 
     addChecksum(packetPayload, DRIVER_CONTROLS_LENGTH);
     unsigned char packet[unframedPacketLength + FRAMING_LENGTH_INCREASE];
@@ -182,10 +180,10 @@ void sendMotorFaults()
     unsigned char packetPayload[unframedPacketLength];
 
     packetPayload[0] = MOTOR_FAULTS_PKG_ID;
-    writeBoolsIntoArray(packetPayload, 1, &motorFaultsData.m0ErrorFlags, 8);
-    writeBoolsIntoArray(packetPayload, 2, &motorFaultsData.m1ErrorFlags, 8);
-    writeBoolsIntoArray(packetPayload, 3, &motorFaultsData.m0LimitFlags, 7);
-    writeBoolsIntoArray(packetPayload, 4, &motorFaultsData.m1LimitFlags, 7);
+    writeBoolsIntoArray(packetPayload, 1, (unsigned char *)(&motorFaultsData.m0ErrorFlags), 8);
+    writeBoolsIntoArray(packetPayload, 2, (unsigned char *)(&motorFaultsData.m1ErrorFlags), 8);
+    writeBoolsIntoArray(packetPayload, 3, (unsigned char *)(&motorFaultsData.m0LimitFlags), 7);
+    writeBoolsIntoArray(packetPayload, 4, (unsigned char *)(&motorFaultsData.m1LimitFlags), 7);
     packetPayload[5] = motorFaultsData.m0CanRxErrorCount;
     packetPayload[6] = motorFaultsData.m0CanTxErrorCount;
     packetPayload[7] = motorFaultsData.m1CanRxErrorCount;
@@ -204,8 +202,8 @@ void sendBatteryFaults()
     unsigned char packetPayload[unframedPacketLength];
 
     packetPayload[0] = BATTERY_FAULTS_PKG_ID;
-    writeBoolsIntoArray(packetPayload, 1, &batteryFaultsData.batteryErrorFlags, 21);
-    writeBoolsIntoArray(packetPayload, 4, &batteryFaultsData.batteryLimitFlags, 16);
+    writeBoolsIntoArray(packetPayload, 1, (unsigned char *)(&batteryFaultsData.batteryErrorFlags), 21);
+    writeBoolsIntoArray(packetPayload, 4, (unsigned char *)(&batteryFaultsData.batteryLimitFlags), 16);
     addChecksum(packetPayload, BATTERY_FAULTS_LENGTH);
     unsigned char packet[unframedPacketLength + FRAMING_LENGTH_INCREASE];
     unsigned int packetLength = frameData(packetPayload, unframedPacketLength, packet);
@@ -339,8 +337,8 @@ void sendAuxBms()
     packetPayload[6] = auxBmsData.highVoltageEnableState;
     packetPayload[7] = auxBmsData.allowDischarge;
     packetPayload[8] = auxBmsData.orionCanReceivedRecently;
-    writeBoolsIntoArray(packetPayload, 9, &auxBmsData.contactorDebugInfo, 7);
-    writeBoolsIntoArray(packetPayload, 10, &auxBmsData.auxTrip, 11);
+    writeBoolsIntoArray(packetPayload, 9, (unsigned char *)(&auxBmsData.contactorDebugInfo), 7);
+    writeBoolsIntoArray(packetPayload, 10, (unsigned char *)(&auxBmsData.auxTrip), 11);
 
     addChecksum(packetPayload, AUX_BMS_DETAILS_LENGTH);
     unsigned char packet[unframedPacketLength + FRAMING_LENGTH_INCREASE];

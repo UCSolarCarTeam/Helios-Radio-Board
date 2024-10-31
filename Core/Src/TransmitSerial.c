@@ -1,6 +1,6 @@
 #include "TransmitSerial.h"
 
-#include "stm32f4xx_hal_uart.h"
+#include "stm32wlxx_hal_uart.h"
 
 /*
 * Flashing Red LED: The USART line is has errored sending this message, will re-try
@@ -12,7 +12,7 @@ void transmitMessage(uint8_t* payload, uint16_t bufferSize)
 
     while (attemptCount < NUMBER_OF_ATTEMPTS)
     {
-        HAL_StatusTypeDef transmitState = HAL_UART_Transmit(&huart3, payload, bufferSize, USART_TIMEOUT_PERIOD);
+        HAL_StatusTypeDef transmitState = HAL_UART_Transmit(&hlpuart1, payload, bufferSize, USART_TIMEOUT_PERIOD);
 
         if (transmitState == HAL_OK)
         {

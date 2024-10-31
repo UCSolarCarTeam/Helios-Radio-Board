@@ -1,6 +1,6 @@
 #pragma once
 
-#include "stm32f4xx.h"
+#include "stm32wlxx.h"
 
 #define CHECKSUM_LENGTH (2)
 #define FRAMING_LENGTH_INCREASE (2)
