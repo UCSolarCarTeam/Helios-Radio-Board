@@ -130,7 +130,7 @@ const osThreadAttr_t CANTxGateKeeperTask_attributes = {
 osThreadId_t CANRXInterruptTaskHandle;
 const osThreadAttr_t CANRXInterruptTask_attributes = {
   .name = "CANRXInterruptTask",
-  .priority = (osPriority_t) osPriorityNormal1,
+  .priority = (osPriority_t) osPriorityHigh,
   .stack_size = DEFAULT_TASK_STACK_SIZE
 };
 
@@ -151,6 +151,13 @@ const osThreadAttr_t queueMessageTask2_attributes = {
 osThreadId_t sendTelemetryTaskHandle;
 const osThreadAttr_t sendTelemetryTask_attributes = {
   .name = "sendTelemetryTask",
+  .priority = (osPriority_t) osPriorityNormal,
+  .stack_size = DEFAULT_TASK_STACK_SIZE
+};
+
+osThreadId_t parseCanTaskHandle;
+const osThreadAttr_t parseCanTask_attributes = {
+  .name = "parseCanTask",
   .priority = (osPriority_t) osPriorityNormal,
   .stack_size = DEFAULT_TASK_STACK_SIZE
 };
@@ -298,8 +305,10 @@ int main(void)
   CANTxGateKeeperTaskHandle = osThreadNew(CANTxGatekeeperTask, NULL, &CANTxGateKeeperTask_attributes);
 
   /* creation of queue CAN message tasks */
-  queueMessageTask1Handle = osThreadNew(queueMessageTask1, NULL, &queueMessageTask1_attributes);
-  queueMessageTask2Handle = osThreadNew(queueMessageTask2, NULL, &queueMessageTask2_attributes);
+  //queueMessageTask1Handle = osThreadNew(queueMessageTask1, NULL, &queueMessageTask1_attributes);
+  //queueMessageTask2Handle = osThreadNew(queueMessageTask2, NULL, &queueMessageTask2_attributes);
+
+  parseCanTaskHandle = osThreadNew(parseCanTask, NULL, &parseCanTask_attributes);
 
   /* USER CODE END RTOS_THREADS */
 

@@ -25,8 +25,6 @@ void CANRxInterrupt()
 
 	CanMsg msg = {0};
 
-	uint32_t ID = 0;
-
 
 	if (osMutexWait(SPIMutexHandle, 0) == osOK)
 	{
@@ -42,6 +40,6 @@ void CANRxInterrupt()
 		osMutexRelease(SPIMutexHandle);
 	}
 
-	osMessageQueuePut(canRxQueue, &msg, 0, osWaitForever);
+	osStatus_t x = osMessageQueuePut(canRxQueue, &msg, 0, osWaitForever);
 
 }

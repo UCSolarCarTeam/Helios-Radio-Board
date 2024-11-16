@@ -91,9 +91,9 @@ void CAN_IC_WRITE_REGISTER_BITWISE(uint8_t address, uint8_t mask, uint8_t value)
 void ConfigureCANSPI(void)
 {
 	uint8_t resetCommand = 0xa0; //instruction to reset IC to default
-	uint8_t CONFIG_CNF1 = 0x00; //BRP = 0 to make tq = 250ns and a SJW of 1Tq
-	uint8_t CONFIG_CNF2 = 0xd8; //PRSEG = 0, PHSEG1 = 3, SAM = 0, BTLMODE = 1
-	uint8_t CONFIG_CNF3 = 0x01; //WAFKIL disabled, PHSEG2 = 2 (BTL enabled) but PHSEG = 1 makes it backwards compatible???? wat
+	uint8_t CONFIG_CNF1 = 0x01; //BRP = 0 to make tq = 125	ns and a SJW of 1Tq
+	uint8_t CONFIG_CNF2 = 0x98; //PRSEG = 1, PHSEG1 = 3, SAM = 0, BTLMODE = 1
+	uint8_t CONFIG_CNF3 = 0x01; //WAFKIL disabled, PHSEG2 = 1 (BTL enabled)
 
 	HAL_GPIO_WritePin(CAN_CS_GPIO_Port, CAN_CS_Pin, GPIO_PIN_RESET);
 	HAL_SPI_Transmit(&hspi1, &resetCommand, 1, 100U);  //reset IC to default
@@ -219,7 +219,7 @@ void sendExtendedCANMessage(CANMsg *msg)
 	uint8_t sendCommand = 0x80 +  (1 << channel); //instruction to send CAN message on channel
 
 	uint8_t TXBNSIDH = (msg->extendedID >> 21) & 0xFF;
-	uint8_t TXBNSIDL = (((msg->extendedID >> 18) & 0x07) << 5) | 0x08 | ((msg->ID >> 16) & 0x03);
+	uint8_t TXBNSIDL = (((msg->extendedID >> 18) & 0x07) << 5) | 0x08 | ((msg->extendedID >> 16) & 0x03);
 	uint8_t TXBNEID8 = (msg->extendedID >> 8) & 0xFF;
 	uint8_t TXBNEID0 = msg->extendedID & 0xFF;
 	uint8_t TXBNDLC = msg->DLC & 0x0F;
@@ -286,7 +286,6 @@ void receiveCANMessage(uint8_t channel, uint32_t* ID, uint8_t* DLC, uint8_t* dat
 		CAN_IC_READ_REGISTER(initialDataBufferAddress + i, (data++)); //read from relevant data registers
 	}
 
-	CAN_IC_WRITE_REGISTER_BITWISE(CANINTF, channel + 1, channel + 1); //clear interrupts
+	CAN_IC_WRITE_REGISTER_BITWISE(CANINTF, channel + 1, 0); //clear interrupts
 	return;
 }
-

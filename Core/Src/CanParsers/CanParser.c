@@ -15,7 +15,7 @@ extern osMessageQueueId_t canRxQueue;
 
 void parseCanTask(void const* arg)
 {
-    uint32_t prevWakeTime = osKernelSysTick();
+    //uint32_t prevWakeTime = osKernelSysTick();
     CanMsg msg;
 
     for (;;)

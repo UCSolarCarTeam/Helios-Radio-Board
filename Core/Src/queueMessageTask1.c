@@ -4,8 +4,8 @@ void queueMessageTask1(void* arg) {
 	CANMsg msg1 = {
 			.DLC = 1,
 			.ID = 0,
-			.extendedID = 0xCFCFCFC,
-			.data = {0xCC}
+			.extendedID = 0x701,
+			.data = {0xA5}
 	};
 
 	for(;;) {
