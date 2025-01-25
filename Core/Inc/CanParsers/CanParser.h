@@ -3,27 +3,42 @@
 #include "stm32wlxx.h"
 #include "CAN.h"
 
-#define AUX_BMS_CAN_MIN (0x720)
-#define AUX_BMS_CAN_MAX (0x72F)
 
-#define BMS_CAN_MIN (0x300)
-#define BMS_CAN_MAX (0x30F)
+#define MBMS_CAN_MIN (0x100)
+#define MBMS_CAN_MAX (0x10F)
 
-#define DRIVER_CONTROL_CAN_MIN (0x700)
-#define DRIVER_CONTROL_CAN_MAX (0x70F)
+#define CONTACTOR_CAN_MIN (0x200)
+#define CONTACTOR_CAN_MAX (0x20F)
 
-#define LIGHTS_CAN_MIN (0x710)
-#define LIGHTS_CAN_MAX (0x71F)
+#define AUX_MBMS_CAN_MIN (0x300) //Orion
+#define AUX_MBMS_CAN_MAX (0x30F)
 
-#define MOTOR_CAN_MIN (0x400)
-#define MOTOR_CAN_MAX (0x503)
+#define MPPT_CAN_MIN (0x400)
+#define MPPT_CAN_MAX (0x403)
 
-#define MPPT_CAN_MIN (0x600)
-#define MPPT_CAN_MAX (0x603)
+#define MOTOR_CONTROLLER_CAN_MIN (0x500)
+#define MOTOR_CONTROLLER_CAN_MAX (0x507)
+
+#define MOTOR_COMMAND_CAN_MIN (0x550)
+#define MOTOR_COMMAND_CAN_MAX (0x551)
+
+#define B3_CAN_MIN (0x600)
+
+#define DRIVER_CONTROL_CAN_MIN (0x610)
+#define DRIVER_CONTROL_CAN_MAX (0x61F)
+
+#define POWER_BOARD_CAN_MIN (0x620)
+#define POWER_BOARD_CAN_MAX (0x62F)
+
+#define TELEMETRY_CAN_MIN (0x630)
+#define TELEMETRY_CAN_MAX (0x63F)
+
+#define PROXIMITY_CAN_MIN (0x660)
+#define PROXIMITY_CAN_MAX (0x66F)
+
 
 #define LED_ON 1
 #define LED_OFF 0
-
 
 typedef struct
 {

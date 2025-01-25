@@ -29,11 +29,11 @@ void parseCanTask(void const* arg)
 void parseCanMessage(uint32_t stdId, uint8_t* data)
 {
 
-    if (stdId >= AUX_BMS_CAN_MIN && stdId <= AUX_BMS_CAN_MAX)
+    if (stdId >= AUX_MBMS_CAN_MIN && stdId <= AUX_MBMS_CAN_MAX)
     {
         parseAuxBmsCanMessage(stdId, data);
     }
-    else if (stdId >= BMS_CAN_MIN && stdId <= BMS_CAN_MAX)
+    else if (stdId >= MBMS_CAN_MIN && stdId <= MBMS_CAN_MAX)
     {
         parseBmsCanMessage(stdId, data);
     }
@@ -41,7 +41,7 @@ void parseCanMessage(uint32_t stdId, uint8_t* data)
     {
         parseDriverControlsCanMessage(stdId, data);
     }
-    else if (stdId >= LIGHTS_CAN_MIN && stdId <= LIGHTS_CAN_MAX)
+    else if (stdId >= POWER_BOARD_CAN_MIN && stdId <= POWER_BOARD_CAN_MAX)
     {
         parseLightsCanMessage(stdId, data);
     }
@@ -49,7 +49,7 @@ void parseCanMessage(uint32_t stdId, uint8_t* data)
     {
         parseMpptCanMessage(stdId, data);
     }
-    else if (stdId >= MOTOR_CAN_MIN && stdId <= MOTOR_CAN_MAX)
+    else if (stdId >= MOTOR_CONTROLLER_CAN_MIN && stdId <= MOTOR_CONTROLLER_CAN_MAX)
     {
         parseMotorCanMessage(stdId, data);
     }
