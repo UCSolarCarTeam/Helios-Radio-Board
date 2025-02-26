@@ -24,8 +24,11 @@
 #define MPPT_DETAILS_LENGTH (10)
 #define LIGHTS_DETAILS_LENGTH (3)
 #define AUX_BMS_DETAILS_LENGTH (12)
+#define B3_LENGTH (9)
 
 #define CCS_TELEM_PERIOD_MS (200) // 5Hz == 200ms
+
+extern struct B3Data B3Data;
 
 void sendTelemetryTask()
 {
@@ -36,37 +39,30 @@ void sendTelemetryTask()
     {
         osDelay(CCS_TELEM_PERIOD_MS);
 
-        sendKeyMotor();
-        sendLights();
-        sendMotorFaults();
-        sendBatteryFaults();
-        sendDriverControls();
-        sendBattery();
-
-        switch (salvo)
-        {
-            case 1:
-                sendMotorDetails(0);
-                sendMppt(0);
-                sendMppt(1);
-                salvo = 2;
-                break;
-
-            case 2:
-                sendAuxBms();
-                sendMotorDetails(1);
-                sendMppt(2);
-                sendMppt(3);
-                salvo = 1;
-                break;
-
-            default:
-                // Error state
-                salvo = 1;
-                break;
-        }
-
+        sendB3();
     }
+}
+
+void sendB3()
+{
+    unsigned int unframedPacketLength = B3_LENGTH + CHECKSUM_LENGTH;
+    unsigned char packetPayload[unframedPacketLength];
+
+    packetPayload[0] = B3_PKG_ID;
+
+    unsigned char B3AliveArray[] = {messageIsRecent(B3Data.lastReceived)};
+    writeBoolsIntoArray(packetPayload, 1, B3AliveArray, 1);
+    writeBoolsIntoArray(packetPayload, 2, (unsigned char *)(&B3Data.lightsInputs), 4);
+    writeBoolsIntoArray(packetPayload, 3, (unsigned char *)(&B3Data.driverInputs), 11);
+    writeUShortIntoArray(packetPayload, 5, B3Data.acceleration);
+    writeUShortIntoArray(packetPayload, 7, B3Data.regenBraking);
+    writeBoolsIntoArray(packetPayload, 9, (unsigned char *)(&B3Data.powerOutputs), 6);
+
+    addChecksum(packetPayload, B3_LENGTH);
+    unsigned char packet[unframedPacketLength + FRAMING_LENGTH_INCREASE];
+    unsigned int packetLength = frameData(packetPayload, unframedPacketLength, packet);
+
+    transmitMessage(packet, packetLength);
 }
 
 void sendKeyMotor()
