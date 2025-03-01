@@ -7,13 +7,13 @@
 
 #include "KeyMotorData.h"
 #include "MotorDetailsData.h"
-#include "DriverControlData.h"
 #include "MotorFaultsData.h"
 #include "BatteryFaultsData.h"
 #include "BatteryData.h"
 #include "MpptData.h"
-#include "LightsData.h"
 #include "AuxBmsData.h"
+#include "CanData.h"
+#include "B3Data.h"
 
 #define KEY_MOTOR_LENGTH (43)
 #define MOTOR_DETAILS_LENGTH (65)
@@ -32,9 +32,6 @@ extern struct B3Data B3Data;
 
 void sendTelemetryTask()
 {
-    // Salvos defined in https://docs.google.com/spreadsheets/d/1soVLjeD9Sl7z7Z6cYMyn1fmn-cG7tx_pfFDsvgkCqMU/edit#gid=782574835
-    static unsigned char salvo = 1;
-
     for (;;)
     {
         osDelay(CCS_TELEM_PERIOD_MS);
@@ -56,7 +53,7 @@ void sendB3()
     writeBoolsIntoArray(packetPayload, 3, (unsigned char *)(&B3Data.driverInputs), 11);
     writeUShortIntoArray(packetPayload, 5, B3Data.acceleration);
     writeUShortIntoArray(packetPayload, 7, B3Data.regenBraking);
-    writeBoolsIntoArray(packetPayload, 9, (unsigned char *)(&B3Data.powerOutputs), 6);
+    writeBoolsIntoArray(packetPayload, 9, (unsigned char *)(&(B3Data.powerOutputs)), 6);
 
     addChecksum(packetPayload, B3_LENGTH);
     unsigned char packet[unframedPacketLength + FRAMING_LENGTH_INCREASE];
@@ -143,27 +140,6 @@ void sendMotorDetails(int n)
     }
 
     addChecksum(packetPayload, MOTOR_DETAILS_LENGTH);
-    unsigned char packet[unframedPacketLength + FRAMING_LENGTH_INCREASE];
-    unsigned int packetLength = frameData(packetPayload, unframedPacketLength, packet);
-
-    transmitMessage(packet, packetLength);
-}
-
-void sendDriverControls()
-{
-    unsigned int unframedPacketLength = DRIVER_CONTROLS_LENGTH + CHECKSUM_LENGTH;
-    unsigned char packetPayload[unframedPacketLength];
-
-    packetPayload[0] = DRIVER_CONTROL_PKG_ID;
-    unsigned char driverControlsBoardAliveArray[] = {messageIsRecent(driverControlData.lastReceived)};
-    writeBoolsIntoArray(packetPayload, 1, driverControlsBoardAliveArray, 1);
-    writeBoolsIntoArray(packetPayload, 2, (unsigned char *)(&driverControlData.lightsInputs), 7);
-    writeBoolsIntoArray(packetPayload, 3, (unsigned char *)(&driverControlData.musicInputs), 4);
-    writeUShortIntoArray(packetPayload, 4, driverControlData.acceleration);
-    writeUShortIntoArray(packetPayload, 6, driverControlData.regenBraking);
-    writeBoolsIntoArray(packetPayload, 8, (unsigned char *)(&driverControlData.driverInputs), 8);
-
-    addChecksum(packetPayload, DRIVER_CONTROLS_LENGTH);
     unsigned char packet[unframedPacketLength + FRAMING_LENGTH_INCREASE];
     unsigned int packetLength = frameData(packetPayload, unframedPacketLength, packet);
 
@@ -266,23 +242,6 @@ void sendMppt(int n)
     writeUShortIntoArray(packetPayload, 8, mpptData[n].temperature);
 
     addChecksum(packetPayload, MPPT_DETAILS_LENGTH);
-    unsigned char packet[unframedPacketLength + FRAMING_LENGTH_INCREASE];
-    unsigned int packetLength = frameData(packetPayload, unframedPacketLength, packet);
-
-    transmitMessage(packet, packetLength);
-}
-
-void sendLights()
-{
-    unsigned int unframedPacketLength = LIGHTS_DETAILS_LENGTH + CHECKSUM_LENGTH;
-    unsigned char packetPayload[unframedPacketLength];
-
-    packetPayload[0] = LIGHT_PKG_ID;
-    unsigned char lightsAliveArray[] = {messageIsRecent(lightsData.lastReceived)};
-    writeBoolsIntoArray(packetPayload, 1, lightsAliveArray, 1);
-    writeBoolsIntoArray(packetPayload, 2, &lightsData.lowBeams, 6);
-
-    addChecksum(packetPayload, LIGHTS_DETAILS_LENGTH);
     unsigned char packet[unframedPacketLength + FRAMING_LENGTH_INCREASE];
     unsigned int packetLength = frameData(packetPayload, unframedPacketLength, packet);
 

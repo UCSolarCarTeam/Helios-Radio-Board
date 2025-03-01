@@ -6,18 +6,6 @@
 // Under software files in solar car teams
 #define B3_PKG_ID 4
 
-struct B3Data
-{
-    uint32_t lastReceived;
-    struct LightsInputs lightsInputs;
-    struct DriverInputs driverInputs;
-    unsigned short int acceleration;
-    unsigned short int regenBraking;
-    struct PowerOutputs powerOutputs;
-    struct TelemetryData telemetryData;
-    struct GPSFlags GPUFlags;
-};
-
 struct LightsInputs
 {
     unsigned char headlightOn;
@@ -98,9 +86,21 @@ struct GPSFlags
     unsigned char additionalFlag6;
     unsigned char additionalFlag7;
     unsigned char additionalFlag8;
-}
+};
 
-extern struct DriverControlData B3Data;
+struct B3Data
+{
+    uint32_t lastReceived;
+    struct LightsInputs lightsInputs;
+    struct DriverInputs driverInputs;
+    unsigned short int acceleration;
+    unsigned short int regenBraking;
+    struct PowerOutputs powerOutputs;
+    struct TelemetryData telemetryData;
+    struct GPSFlags GPSFlags;
+};
+
+extern struct B3Data B3Data;
 
 void parseB3CanMessage(uint32_t stdId, uint8_t* data);
 void parseB3Heartbeat();

@@ -1,5 +1,5 @@
 #include "cmsis_os.h"
-#include "B3CanParser.h"
+#include "B3Data.h"
 #include "CanData.h"
 
 #define B3_HEARTBEAT_ID     (0x600)
@@ -68,32 +68,29 @@ void parseB3CanMessage(uint32_t stdId, uint8_t* data)
 
 void parseB3Heartbeat()
 {
-    batteryData.bmsLastReceived = osKernelSysTick();
+    B3Data.lastReceived = osKernelSysTick();
 }
 
 void parseLightInputs(uint8_t* data)
 {
-    B3Data.lightsInputs.headlightsOff  = data[0] & HEADLIGHTS_OFF_MASK;
-    B3Data.lightsInputs.headlightsLow  = data[0] & HEADLIGHTS_LOW_MASK;
-    B3Data.lightsInputs.headlightsHigh = data[0] & HEADLIGHTS_HIGH_MASK;
-    B3Data.lightsInputs.signalRight    = data[0] & SIGNAL_RIGHT_MASK;
-    B3Data.lightsInputs.signalLeft     = data[0] & SIGNAL_LEFT_MASK;
-    B3Data.lightsInputs.hazard         = data[0] & HAZARD_MASK;
-    B3Data.lightsInputs.interior       = data[0] & INTERIOR_MASK;
+    B3Data.lightsInputs.signalRight  = data[0] & DRIVER_CONTROL_RIGHT_SIGNAL_INPUT;
+    B3Data.lightsInputs.signalLeft   = data[0] & DRIVER_CONTROL_LEFT_SIGNAL_INPUT;
+    B3Data.lightsInputs.hazard       = data[0] & DRIVER_CONTROL_HAZARD_LIGHTS_INPUT;
+    B3Data.lightsInputs.headlightOn  = data[0] & DRIVER_CONTROL_HEADLIGHTS_INPUT;
 }
 
 void parseDigitalInputs(uint8_t* data)
 {
-    B3Data.digitalInputs.forward         = data[0] & DRIVER_CONTROL_FORWARD;
-    B3Data.digitalInputs.neutral         = data[0] & DRIVER_CONTROL_NEUTRAL;
-    B3Data.digitalInputs.reverse         = data[0] & DRIVER_CONTROL_REVERSE;
-    B3Data.digitalInputs.horn            = data[0] & DRIVER_CONTROL_HORN;
-    B3Data.digitalInputs.brakes          = data[0] & DRIVER_CONTROL_BRAKE;
-    B3Data.digitalInputs.handbrakeSwitch = data[0] & DRIVER_CONTROL_HANDBRAKE;
-    B3Data.digitalInputs.motorReset      = data[0] & DRIVER_CONTROL_MOTOR_RESET;
-    B3Data.digitalInputs.raceMode        = data[0] & DRIVER_CONTROL_RACE_MODE;
-    B3Data.digitalInputs.lap             = data[1] & DRIVER_CONTROL_LAP;
-    B3Data.digitalInputs.ZoomZoom        = data[1] & DRIVER_CONTROL_ZOOM_ZOOM;
+    B3Data.driverInputs.forward         = data[0] & DRIVER_CONTROL_FORWARD;
+    B3Data.driverInputs.reverse         = data[0] & DRIVER_CONTROL_REVERSE;
+    B3Data.driverInputs.neutral         = data[0] & DRIVER_CONTROL_NEUTRAL;
+    B3Data.driverInputs.horn            = data[0] & DRIVER_CONTROL_HORN;
+    B3Data.driverInputs.brakes          = data[0] & DRIVER_CONTROL_BRAKE;
+    B3Data.driverInputs.handbrakeSwitch = data[0] & DRIVER_CONTROL_HANDBRAKE;
+    B3Data.driverInputs.motorReset      = data[0] & DRIVER_CONTROL_MOTOR_RESET;
+    B3Data.driverInputs.raceMode        = data[0] & DRIVER_CONTROL_RACE_MODE;
+    B3Data.driverInputs.lap             = data[1] & DRIVER_CONTROL_LAP;
+    B3Data.driverInputs.ZoomZoom        = data[1] & DRIVER_CONTROL_ZOOM_ZOOM;
 }
 
 void parseAnalogInputs(uint8_t* data)
@@ -107,7 +104,7 @@ void parseAnalogInputs(uint8_t* data)
         ((data[3] & 0xFF) << 4);  // bits 20-23
 }
 
-void parseLightsStatus(uint8_t* data)
+void parseLightStatus(uint8_t* data)
 {
     B3Data.powerOutputs.signalRight               = data[0] & POWER_BOARD_RIGHT_SIGNAL;
     B3Data.powerOutputs.signalLeft                = data[0] & POWER_BOARD_LEFT_SIGNAL;
@@ -123,43 +120,43 @@ void parseGpsTime(uint8_t* data)
         ((data[0] & 0xFF) << 0) | // bits 0-7
         ((data[1] & 0x0F) << 8);  // bits 8-11
     B3Data.telemetryData.month =
-        ((data[2] & 0xFF) << 0) | // bits 12-23
+        ((data[2] & 0xFF) << 0); // bits 12-23
     B3Data.telemetryData.day =
-        ((data[3] & 0xFF) << 0) | // bits 24-31
+        ((data[3] & 0xFF) << 0); // bits 24-31
     B3Data.telemetryData.hour =
-        ((data[4] & 0xFF) << 0) | // bits 32-39
+        ((data[4] & 0xFF) << 0); // bits 32-39
     B3Data.telemetryData.min =
-        ((data[5] & 0xFF) << 0) | // bits 40-47
+        ((data[5] & 0xFF) << 0); // bits 40-47
     B3Data.telemetryData.sec =
-        ((data[6] & 0xFF) << 0) | // bits 47-55
+        ((data[6] & 0xFF) << 0); // bits 47-55
 }
 
 void parseGpsFlags(uint8_t* data)
 {
-    B3Data.lightsInputs.validityFlag1  = data[0] & TELEMETRY_VALIDITY_FLAG_1;
-    B3Data.lightsInputs.validityFlag2  = data[0] & TELEMETRY_VALIDITY_FLAG_2;
-    B3Data.lightsInputs.validityFlag3  = data[0] & TELEMETRY_VALIDITY_FLAG_3;
-    B3Data.lightsInputs.validityFlag4  = data[0] & TELEMETRY_VALIDITY_FLAG_4;
-    B3Data.lightsInputs.validityFlag5  = data[0] & TELEMETRY_VALIDITY_FLAG_5;
-    B3Data.lightsInputs.validityFlag6  = data[0] & TELEMETRY_VALIDITY_FLAG_6;
-    B3Data.lightsInputs.validityFlag7  = data[0] & TELEMETRY_VALIDITY_FLAG_7;
-    B3Data.lightsInputs.validityFlag8  = data[0] & TELEMETRY_VALIDITY_FLAG_8;
-    B3Data.lightsInputs.fixStatusFlag1  = data[1] & TELEMETRY_FIX_STATUS_FLAG_1;
-    B3Data.lightsInputs.fixStatusFlag2  = data[1] & TELEMETRY_FIX_STATUS_FLAG_2;
-    B3Data.lightsInputs.fixStatusFlag3  = data[1] & TELEMETRY_FIX_STATUS_FLAG_3;
-    B3Data.lightsInputs.fixStatusFlag4  = data[1] & TELEMETRY_FIX_STATUS_FLAG_4;
-    B3Data.lightsInputs.fixStatusFlag5  = data[1] & TELEMETRY_FIX_STATUS_FLAG_5;
-    B3Data.lightsInputs.fixStatusFlag6  = data[1] & TELEMETRY_FIX_STATUS_FLAG_6;
-    B3Data.lightsInputs.fixStatusFlag7  = data[1] & TELEMETRY_FIX_STATUS_FLAG_7;
-    B3Data.lightsInputs.fixStatusFlag8  = data[1] & TELEMETRY_FIX_STATUS_FLAG_8;
-    B3Data.lightsInputs.additionalFlag1  = data[2] & TELEMETRY_ADDITIONAL_FLAG_1;
-    B3Data.lightsInputs.additionalFlag2  = data[2] & TELEMETRY_ADDITIONAL_FLAG_2;
-    B3Data.lightsInputs.additionalFlag3  = data[2] & TELEMETRY_ADDITIONAL_FLAG_3;
-    B3Data.lightsInputs.additionalFlag4  = data[2] & TELEMETRY_ADDITIONAL_FLAG_4;
-    B3Data.lightsInputs.additionalFlag5  = data[2] & TELEMETRY_ADDITIONAL_FLAG_5;
-    B3Data.lightsInputs.additionalFlag6  = data[2] & TELEMETRY_ADDITIONAL_FLAG_6;
-    B3Data.lightsInputs.additionalFlag7  = data[2] & TELEMETRY_ADDITIONAL_FLAG_7;
-    B3Data.lightsInputs.additionalFlag8  = data[2] & TELEMETRY_ADDITIONAL_FLAG_8;
+    B3Data.GPSFlags.validityFlag1  = data[0] & TELEMETRY_VALIDITY_FLAG_1;
+    B3Data.GPSFlags.validityFlag2  = data[0] & TELEMETRY_VALIDITY_FLAG_2;
+    B3Data.GPSFlags.validityFlag3  = data[0] & TELEMETRY_VALIDITY_FLAG_3;
+    B3Data.GPSFlags.validityFlag4  = data[0] & TELEMETRY_VALIDITY_FLAG_4;
+    B3Data.GPSFlags.validityFlag5  = data[0] & TELEMETRY_VALIDITY_FLAG_5;
+    B3Data.GPSFlags.validityFlag6  = data[0] & TELEMETRY_VALIDITY_FLAG_6;
+    B3Data.GPSFlags.validityFlag7  = data[0] & TELEMETRY_VALIDITY_FLAG_7;
+    B3Data.GPSFlags.validityFlag8  = data[0] & TELEMETRY_VALIDITY_FLAG_8;
+    B3Data.GPSFlags.fixStatusFlag1  = data[1] & TELEMETRY_FIX_STATUS_FLAG_1;
+    B3Data.GPSFlags.fixStatusFlag2  = data[1] & TELEMETRY_FIX_STATUS_FLAG_2;
+    B3Data.GPSFlags.fixStatusFlag3  = data[1] & TELEMETRY_FIX_STATUS_FLAG_3;
+    B3Data.GPSFlags.fixStatusFlag4  = data[1] & TELEMETRY_FIX_STATUS_FLAG_4;
+    B3Data.GPSFlags.fixStatusFlag5  = data[1] & TELEMETRY_FIX_STATUS_FLAG_5;
+    B3Data.GPSFlags.fixStatusFlag6  = data[1] & TELEMETRY_FIX_STATUS_FLAG_6;
+    B3Data.GPSFlags.fixStatusFlag7  = data[1] & TELEMETRY_FIX_STATUS_FLAG_7;
+    B3Data.GPSFlags.fixStatusFlag8  = data[1] & TELEMETRY_FIX_STATUS_FLAG_8;
+    B3Data.GPSFlags.additionalFlag1  = data[2] & TELEMETRY_ADDITIONAL_FLAG_1;
+    B3Data.GPSFlags.additionalFlag2  = data[2] & TELEMETRY_ADDITIONAL_FLAG_2;
+    B3Data.GPSFlags.additionalFlag3  = data[2] & TELEMETRY_ADDITIONAL_FLAG_3;
+    B3Data.GPSFlags.additionalFlag4  = data[2] & TELEMETRY_ADDITIONAL_FLAG_4;
+    B3Data.GPSFlags.additionalFlag5  = data[2] & TELEMETRY_ADDITIONAL_FLAG_5;
+    B3Data.GPSFlags.additionalFlag6  = data[2] & TELEMETRY_ADDITIONAL_FLAG_6;
+    B3Data.GPSFlags.additionalFlag7  = data[2] & TELEMETRY_ADDITIONAL_FLAG_7;
+    B3Data.GPSFlags.additionalFlag8  = data[2] & TELEMETRY_ADDITIONAL_FLAG_8;
 }
 
 void parseGpsPosition(uint8_t* data)

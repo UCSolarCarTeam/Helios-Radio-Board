@@ -40,6 +40,6 @@ void CANRxInterrupt()
 		osMutexRelease(SPIMutexHandle);
 	}
 
-	osStatus_t x = osMessageQueuePut(canRxQueue, &msg, 0, osWaitForever);
+	osMessageQueuePut(canRxQueue, &msg, 0, osWaitForever);
 
 }

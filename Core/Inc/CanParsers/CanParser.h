@@ -23,6 +23,7 @@
 #define MOTOR_COMMAND_CAN_MAX (0x551)
 
 #define B3_CAN_MIN (0x600)
+#define B3_CAN_MAX (0x6FF)
 
 #define DRIVER_CONTROL_CAN_MIN (0x610)
 #define DRIVER_CONTROL_CAN_MAX (0x61F)
@@ -33,8 +34,8 @@
 #define TELEMETRY_CAN_MIN (0x630)
 #define TELEMETRY_CAN_MAX (0x63F)
 
-#define PROXIMITY_CAN_MIN (0x660)
-#define PROXIMITY_CAN_MAX (0x66F)
+#define PROXIMITY_CAN_MIN (0x700)
+#define PROXIMITY_CAN_MAX (0x704)
 
 
 #define LED_ON 1
